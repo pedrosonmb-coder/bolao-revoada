@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+/* Dark mode via classe .dark no elemento html */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* === Cores — light mode (padrão) === */
+  --color-bg-base: #FFFFFF;
+  --color-bg-surface: #F5F5F5;
+  --color-border-base: #E5E5E5;
+  --color-text-primary: #0A0A0A;
+  --color-text-secondary: #737373;
+  --color-accent-primary: #0A2D82;
+  --color-accent-critical: #E10600;
+
+  /* === Tipografia === */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-tight: var(--font-inter-tight), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* === Cores — dark mode === */
+.dark {
+  --color-bg-base: #0A0A0A;
+  --color-bg-surface: #1A1A1A;
+  --color-border-base: #2A2A2A;
+  --color-text-primary: #FAFAFA;
+  --color-text-secondary: #A3A3A3;
+  --color-accent-primary: #3D5FBF;
+  --color-accent-critical: #FF1F1F;
+}
+
+/* === Reset de base === */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: var(--color-bg-base);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

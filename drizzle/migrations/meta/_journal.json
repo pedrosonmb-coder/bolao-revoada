@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1778784488187,
+      "tag": "0000_huge_peter_parker",
+      "breakpoints": true
+    }
+  ]
+}
