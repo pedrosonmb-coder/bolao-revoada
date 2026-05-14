@@ -29,6 +29,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       suppressHydrationWarning
       className={`${inter.variable} ${interTight.variable}`}
     >
+      <head>
+        <script src="https://telegram.org/js/telegram-web-app.js" />
+      </head>
       <body>{children}</body>
     </html>
   )
