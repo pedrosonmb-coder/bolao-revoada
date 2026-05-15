@@ -9,7 +9,8 @@
     "db:generate": "dotenv -e .env.local -- drizzle-kit generate",
     "db:migrate": "dotenv -e .env.local -- drizzle-kit migrate",
     "db:studio": "dotenv -e .env.local -- drizzle-kit studio",
-    "lint": "next lint"
+    "lint": "next lint",
+    "seed:matches": "dotenv -e .env.local -- tsx src/scripts/seed-matches.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.36.0",
@@ -31,6 +32,7 @@
     "dotenv-cli": "^7.4.4",
     "drizzle-kit": "^0.28.1",
     "tailwindcss": "^4.0.0",
+    "tsx": "^4.22.0",
     "typescript": "^5.7.0"
   }
 }

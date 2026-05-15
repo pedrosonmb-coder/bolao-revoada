@@ -10,6 +10,7 @@ const envSchema = z.object({
   FOOTBALL_DATA_API_KEY: z.string().min(1, 'FOOTBALL_DATA_API_KEY é obrigatória'),
   FIFA_API_BASE: z.string().url().default('https://api.fifa.com/api/v3'),
   ADMIN_TELEGRAM_IDS: z.string().min(1, 'ADMIN_TELEGRAM_IDS é obrigatória'),
+  CRON_SECRET: z.string().min(1, 'CRON_SECRET é obrigatória'),
   NEXT_PUBLIC_APP_URL: z.string().min(1, 'NEXT_PUBLIC_APP_URL é obrigatória'),
 })
 

@@ -215,6 +215,50 @@ export const botMessages = sqliteTable(
 )
 
 // ---------------------------------------------------------------------------
+// match_snapshots (histórico de cada resposta de cada fonte externa)
+// ---------------------------------------------------------------------------
+export const matchSnapshots = sqliteTable(
+  'match_snapshots',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    match_id: integer('match_id')
+      .notNull()
+      .references(() => matches.id),
+    // 'football-data' | 'fifa' | 'ge' | 'wikipedia'
+    source: text('source').notNull(),
+    status: text('status'),
+    home_score: integer('home_score'),
+    away_score: integer('away_score'),
+    home_score_pen: integer('home_score_pen'),
+    away_score_pen: integer('away_score_pen'),
+    raw_payload: text('raw_payload'),
+    fetched_at: integer('fetched_at', { mode: 'timestamp' }).notNull(),
+  },
+  (table) => ({
+    matchFetchedIdx: index('match_snapshots_match_fetched_idx').on(
+      table.match_id,
+      table.fetched_at
+    ),
+  })
+)
+
+// ---------------------------------------------------------------------------
+// polling_logs (uma linha por execução de cron)
+// ---------------------------------------------------------------------------
+export const pollingLogs = sqliteTable('polling_logs', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  ran_at: integer('ran_at', { mode: 'timestamp' }).notNull(),
+  // 'poll-live-matches' | 'poll-fixtures'
+  endpoint: text('endpoint').notNull(),
+  checked: integer('checked').default(0),
+  updated: integer('updated').default(0),
+  locked: integer('locked').default(0),
+  conflicts: integer('conflicts').default(0),
+  duration_ms: integer('duration_ms'),
+  error: text('error'),
+})
+
+// ---------------------------------------------------------------------------
 // Tipos inferidos para uso na aplicação
 // ---------------------------------------------------------------------------
 export type User = typeof users.$inferSelect
@@ -228,3 +272,7 @@ export type NewTournamentPrediction = typeof tournamentPredictions.$inferInsert
 export type TournamentResult = typeof tournamentResults.$inferSelect
 export type PhaseWindow = typeof phaseWindows.$inferSelect
 export type BotMessage = typeof botMessages.$inferSelect
+export type MatchSnapshot = typeof matchSnapshots.$inferSelect
+export type NewMatchSnapshot = typeof matchSnapshots.$inferInsert
+export type PollingLog = typeof pollingLogs.$inferSelect
+export type NewPollingLog = typeof pollingLogs.$inferInsert
