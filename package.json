@@ -10,7 +10,8 @@
     "db:migrate": "dotenv -e .env.local -- drizzle-kit migrate",
     "db:studio": "dotenv -e .env.local -- drizzle-kit studio",
     "lint": "next lint",
-    "seed:matches": "dotenv -e .env.local -- tsx src/scripts/seed-matches.ts"
+    "seed:matches": "dotenv -e .env.local -- tsx src/scripts/seed-matches.ts",
+    "test:reconcile": "dotenv -e .env.local -- tsx src/scripts/test-reconcile.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.36.0",
