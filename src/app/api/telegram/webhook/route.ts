@@ -40,7 +40,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   if (!secret || secret !== env.TELEGRAM_WEBHOOK_SECRET) {
     return new NextResponse(null, { status: 403 })
   }
-
+// TEMPORÁRIO: log pra descobrir chat_id real
+  try {
+    const body = await req.clone().json()
+    console.log('[debug] update recebido:', JSON.stringify(body, null, 2))
+  } catch {}
   // Sempre retorna 200 — o Telegram não deve retentar em 5xx
   try {
     const timeoutSignal = AbortSignal.timeout(TIMEOUT_MS)
