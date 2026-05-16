@@ -12,11 +12,16 @@ export async function isUserInGroup(telegramId: number): Promise<boolean> {
 
   try {
     const member = await bot.api.getChatMember(env.TELEGRAM_GROUP_CHAT_ID, telegramId)
-    const result = ['member', 'administrator', 'creator'].includes(member.status)
+    console.log(`[group-check] getChatMember(${telegramId}) → status: ${member.status}`)
+    const result = ['member', 'administrator', 'creator', 'restricted'].includes(member.status)
     cache.set(telegramId, { result, expiresAt: now + CACHE_TTL_MS })
     return result
-  } catch {
-    cache.set(telegramId, { result: false, expiresAt: now + CACHE_TTL_MS })
+  } catch (err: unknown) {
+    const e = err as { message?: string; error_code?: number }
+    console.error(
+      `[group-check] getChatMember(${telegramId}) falhou — code: ${e?.error_code}, message: ${e?.message}`
+    )
+    // Não cacheia erro: pode ser falha transitória
     return false
   }
 }
