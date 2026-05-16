@@ -11,7 +11,9 @@
     "db:studio": "dotenv -e .env.local -- drizzle-kit studio",
     "lint": "next lint",
     "seed:matches": "dotenv -e .env.local -- tsx src/scripts/seed-matches.ts",
-    "test:reconcile": "dotenv -e .env.local -- tsx src/scripts/test-reconcile.ts"
+    "test:reconcile": "dotenv -e .env.local -- tsx src/scripts/test-reconcile.ts",
+    "setup:bot": "dotenv -e .env.local -- tsx src/scripts/setup-bot.ts",
+    "setup:webhook": "dotenv -e .env.local -- tsx src/scripts/setup-webhook.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.36.0",

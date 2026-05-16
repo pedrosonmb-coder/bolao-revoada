@@ -12,6 +12,7 @@ const envSchema = z.object({
   ADMIN_TELEGRAM_IDS: z.string().min(1, 'ADMIN_TELEGRAM_IDS é obrigatória'),
   CRON_SECRET: z.string().min(1, 'CRON_SECRET é obrigatória'),
   NEXT_PUBLIC_APP_URL: z.string().min(1, 'NEXT_PUBLIC_APP_URL é obrigatória'),
+  TELEGRAM_BOT_USERNAME: z.string().min(1, 'TELEGRAM_BOT_USERNAME é obrigatória'),
 })
 
 const _parsed = envSchema.safeParse(process.env)

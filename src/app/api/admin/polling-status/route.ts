@@ -1,24 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { matches, matchSnapshots, pollingLogs } from '@/lib/db/schema'
-import { desc, sql, eq, isNotNull } from 'drizzle-orm'
-import { env } from '@/lib/env'
-
-function verifyAdminAuth(req: NextRequest): NextResponse | null {
-  const adminId = req.headers.get('x-admin-id')
-  if (!adminId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-  const allowed = env.ADMIN_TELEGRAM_IDS.split(',').map((s) => s.trim())
-  if (!allowed.includes(adminId)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
-  return null
-}
+import { desc, sql, isNotNull } from 'drizzle-orm'
+import { requireAdmin } from '@/lib/auth/admin'
 
 export async function GET(req: NextRequest) {
-  const authError = verifyAdminAuth(req)
-  if (authError) return authError
+  const adminOrError = await requireAdmin(req)
+  if (adminOrError instanceof NextResponse) return adminOrError
 
   const [recentLogs, statusSummary, lockedCount, recentSnapshots] =
     await Promise.all([
