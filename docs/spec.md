@@ -109,12 +109,12 @@ Aplicado sobre o total do jogo (placar + bônus de classificação).
 |---|---|
 | Campeão | 100 |
 | Vice-campeão | 50 |
-| Cada semifinalista (até 4) | 25 |
+| Outros 2 semifinalistas (além de campeão e vice) | 25 cada |
 | Artilheiro da Copa | 50 |
 | Melhor jogador (Bola de Ouro Adidas) | 50 |
 | Melhor jovem (Young Player Award FIFA) | 25 |
 
-Máximo possível: 375 pontos.
+Máximo possível: 325 pontos. (Campeão e vice já contam como 2 dos 4 semifinalistas — os outros 2 valem 25 pts cada.)
 
 ### 4.5 Janelas de palpite
 
@@ -266,10 +266,8 @@ Admin marca `status = 'cancelled'`. Cada palpite naquele jogo recebe a média do
   user_id: integer (FK)
   champion_code: text
   runner_up_code: text
-  semifinalist_1_code: text
+  semifinalist_1_code: text  // outros semis além de campeão e vice (sem ordem)
   semifinalist_2_code: text
-  semifinalist_3_code: text
-  semifinalist_4_code: text
   top_scorer_name: text
   best_player_name: text
   best_young_player_name: text

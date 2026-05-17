@@ -147,10 +147,9 @@ export const tournamentPredictions = sqliteTable(
       .references(() => users.id),
     champion_code: text('champion_code'),
     runner_up_code: text('runner_up_code'),
+    // Os outros 2 semifinalistas (sem ordem — campeão e vice já são semis implicitamente)
     semifinalist_1_code: text('semifinalist_1_code'),
     semifinalist_2_code: text('semifinalist_2_code'),
-    semifinalist_3_code: text('semifinalist_3_code'),
-    semifinalist_4_code: text('semifinalist_4_code'),
     top_scorer_name: text('top_scorer_name'),
     best_player_name: text('best_player_name'),
     best_young_player_name: text('best_young_player_name'),

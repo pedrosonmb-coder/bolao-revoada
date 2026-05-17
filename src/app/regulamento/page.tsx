@@ -1,25 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-
-function BackButton() {
-  function handleBack() {
-    if (window.Telegram?.WebApp) {
-      window.Telegram.WebApp.close()
-    } else {
-      history.back()
-    }
-  }
-
-  return (
-    <button
-      onClick={handleBack}
-      className="flex items-center gap-1 text-sm text-[#737373] hover:text-[#0A0A0A] dark:hover:text-[#FAFAFA] mb-6"
-    >
-      ← Voltar
-    </button>
-  )
-}
+import { BackButton } from '@/components/layout/back-button'
 
 export default function RegulamentoPage() {
   useEffect(() => {
@@ -31,27 +13,27 @@ export default function RegulamentoPage() {
   }, [])
 
   return (
-    <main className="min-h-screen bg-[#FFFFFF] dark:bg-[#0A0A0A] text-[#0A0A0A] dark:text-[#FAFAFA] font-[family-name:var(--font-inter)]">
+    <main className="min-h-screen bg-(--color-bg-base) text-(--color-text-primary) font-[family-name:var(--font-inter)]">
       <div className="max-w-2xl mx-auto px-4 py-6">
-        <BackButton />
+        <BackButton fallbackHref="/mais" />
 
         <h1 className="font-[family-name:var(--font-inter-tight)] font-black text-2xl uppercase mb-6">
           Regulamento
         </h1>
 
-        <p className="text-[#737373] text-sm mb-8">
+        <p className="text-(--color-text-secondary) text-sm mb-8">
           Bolão do Revoada — Copa do Mundo FIFA 2026. 9 participantes, R$ 900 em jogo, 104 jogos.
         </p>
 
         {/* 4.1 Pontuação — fase de grupos */}
         <section className="mb-8">
           <h2 className="font-bold text-base mb-3">Pontuação por jogo — fase de grupos</h2>
-          <p className="text-sm text-[#737373] mb-3">
+          <p className="text-sm text-(--color-text-secondary) mb-3">
             Hierárquica: só o melhor critério atingido conta.
           </p>
           <table className="w-full text-sm border-collapse">
             <thead>
-              <tr className="border-b border-[#E5E5E5] dark:border-[#2A2A2A]">
+              <tr className="border-b border-(--color-border-base)">
                 <th className="text-left py-2 font-medium">Acerto</th>
                 <th className="text-right py-2 font-medium">Pontos</th>
               </tr>
@@ -67,9 +49,9 @@ export default function RegulamentoPage() {
               ].map(([acerto, pts]) => (
                 <tr
                   key={acerto}
-                  className="border-b border-[#E5E5E5] dark:border-[#2A2A2A] last:border-0"
+                  className="border-b border-(--color-border-base) last:border-0"
                 >
-                  <td className="py-2 text-[#0A0A0A] dark:text-[#FAFAFA]">{acerto}</td>
+                  <td className="py-2 text-(--color-text-primary)">{acerto}</td>
                   <td className="py-2 text-right font-[family-name:var(--font-inter-tight)] font-bold">
                     {pts}
                   </td>
@@ -82,8 +64,8 @@ export default function RegulamentoPage() {
         {/* 4.2 Mata-mata */}
         <section className="mb-8">
           <h2 className="font-bold text-base mb-3">Pontuação no mata-mata</h2>
-          <p className="text-sm text-[#737373]">
-            Mesma tabela acima <span className="font-medium text-[#0A0A0A] dark:text-[#FAFAFA]">+ 5 pontos</span> se acertou quem se classificou, independente do placar.
+          <p className="text-sm text-(--color-text-secondary)">
+            Mesma tabela acima <span className="font-medium text-(--color-text-primary)">+ 5 pontos</span> se acertou quem se classificou, independente do placar.
           </p>
         </section>
 
@@ -92,7 +74,7 @@ export default function RegulamentoPage() {
           <h2 className="font-bold text-base mb-3">Multiplicadores por fase</h2>
           <table className="w-full text-sm border-collapse">
             <thead>
-              <tr className="border-b border-[#E5E5E5] dark:border-[#2A2A2A]">
+              <tr className="border-b border-(--color-border-base)">
                 <th className="text-left py-2 font-medium">Fase</th>
                 <th className="text-right py-2 font-medium">Multiplicador</th>
               </tr>
@@ -109,7 +91,7 @@ export default function RegulamentoPage() {
               ].map(([fase, mult]) => (
                 <tr
                   key={fase}
-                  className="border-b border-[#E5E5E5] dark:border-[#2A2A2A] last:border-0"
+                  className="border-b border-(--color-border-base) last:border-0"
                 >
                   <td className="py-2">{fase}</td>
                   <td className="py-2 text-right font-[family-name:var(--font-inter-tight)] font-bold">
@@ -124,10 +106,10 @@ export default function RegulamentoPage() {
         {/* 4.4 Palpites de torneio */}
         <section className="mb-8">
           <h2 className="font-bold text-base mb-3">Palpites de torneio</h2>
-          <p className="text-sm text-[#737373] mb-3">Feitos antes do apito inicial. Máximo: 375 pts.</p>
+          <p className="text-sm text-(--color-text-secondary) mb-3">Feitos antes do apito inicial. Máximo: 375 pts.</p>
           <table className="w-full text-sm border-collapse">
             <thead>
-              <tr className="border-b border-[#E5E5E5] dark:border-[#2A2A2A]">
+              <tr className="border-b border-(--color-border-base)">
                 <th className="text-left py-2 font-medium">Palpite</th>
                 <th className="text-right py-2 font-medium">Pontos</th>
               </tr>
@@ -143,7 +125,7 @@ export default function RegulamentoPage() {
               ].map(([palpite, pts]) => (
                 <tr
                   key={palpite}
-                  className="border-b border-[#E5E5E5] dark:border-[#2A2A2A] last:border-0"
+                  className="border-b border-(--color-border-base) last:border-0"
                 >
                   <td className="py-2">{palpite}</td>
                   <td className="py-2 text-right font-[family-name:var(--font-inter-tight)] font-bold">
@@ -158,17 +140,17 @@ export default function RegulamentoPage() {
         {/* 4.5 Janelas de palpite */}
         <section className="mb-8">
           <h2 className="font-bold text-base mb-3">Janelas de palpite</h2>
-          <ul className="text-sm space-y-2 text-[#737373]">
+          <ul className="text-sm space-y-2 text-(--color-text-secondary)">
             <li>
-              <span className="font-medium text-[#0A0A0A] dark:text-[#FAFAFA]">Torneio + grupos:</span>{' '}
+              <span className="font-medium text-(--color-text-primary)">Torneio + grupos:</span>{' '}
               01/06/2026 até 5 min antes do jogo de abertura (11/06/2026)
             </li>
             <li>
-              <span className="font-medium text-[#0A0A0A] dark:text-[#FAFAFA]">Demais fases:</span>{' '}
+              <span className="font-medium text-(--color-text-primary)">Demais fases:</span>{' '}
               abrem após o último jogo da fase anterior, fecham 5 min antes do primeiro jogo da próxima
             </li>
           </ul>
-          <p className="text-sm text-[#737373] mt-3">
+          <p className="text-sm text-(--color-text-secondary) mt-3">
             Após fechamento, palpite é imutável. Não palpitou = 0 pontos.
           </p>
         </section>
@@ -176,7 +158,7 @@ export default function RegulamentoPage() {
         {/* 4.6 Pagamento */}
         <section className="mb-8">
           <h2 className="font-bold text-base mb-3">Pagamento de inscrição</h2>
-          <ul className="text-sm space-y-1 text-[#737373]">
+          <ul className="text-sm space-y-1 text-(--color-text-secondary)">
             <li>R$ 100 por participante via Pix</li>
             <li>Prazo: até 10/06/2026 23h59 (horário de Brasília)</li>
             <li>Quem não pagou no prazo: bloqueado do bolão, fora do ranking</li>
@@ -186,7 +168,7 @@ export default function RegulamentoPage() {
         {/* 4.7 Regras operacionais */}
         <section className="mb-8">
           <h2 className="font-bold text-base mb-3">Regras operacionais</h2>
-          <ul className="text-sm space-y-1 text-[#737373]">
+          <ul className="text-sm space-y-1 text-(--color-text-secondary)">
             <li>Prorrogação conta para placar; pênaltis não contam (só para bônus de classificação)</li>
             <li>Palpites alheios ficam ocultos até o apito inicial do jogo</li>
             <li>Resultado oficial: ≥ 2 fontes concordando por 10 min consecutivos</li>
@@ -197,7 +179,7 @@ export default function RegulamentoPage() {
         {/* 4.8 Desempate */}
         <section className="mb-8">
           <h2 className="font-bold text-base mb-3">Critérios de desempate</h2>
-          <ol className="text-sm space-y-1 text-[#737373] list-decimal list-inside">
+          <ol className="text-sm space-y-1 text-(--color-text-secondary) list-decimal list-inside">
             <li>Mais vencedores acertados</li>
             <li>Mais placares exatos</li>
             <li>Mais pontos em palpites de torneio</li>
@@ -218,21 +200,21 @@ export default function RegulamentoPage() {
               ].map(([pos, valor, pct]) => (
                 <tr
                   key={pos}
-                  className="border-b border-[#E5E5E5] dark:border-[#2A2A2A] last:border-0"
+                  className="border-b border-(--color-border-base) last:border-0"
                 >
                   <td className="py-2 font-medium">{pos}</td>
                   <td className="py-2 font-[family-name:var(--font-inter-tight)] font-bold">{valor}</td>
-                  <td className="py-2 text-right text-[#737373]">{pct}</td>
+                  <td className="py-2 text-right text-(--color-text-secondary)">{pct}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <p className="text-sm text-[#737373] mt-3">
+          <p className="text-sm text-(--color-text-secondary) mt-3">
             Pagamento em até 7 dias úteis após a apuração final.
           </p>
         </section>
 
-        <div className="border-t border-[#E5E5E5] dark:border-[#2A2A2A] pt-4 text-xs text-[#737373]">
+        <div className="border-t border-(--color-border-base) pt-4 text-xs text-(--color-text-secondary)">
           Bolão do Revoada — Copa do Mundo FIFA 2026
         </div>
       </div>

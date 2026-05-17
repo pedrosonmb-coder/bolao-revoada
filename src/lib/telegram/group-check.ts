@@ -10,13 +10,8 @@ export async function isUserInGroup(telegramId: number): Promise<boolean> {
   const cached = cache.get(telegramId)
   if (cached && cached.expiresAt > now) return cached.result
 
-  console.log('[debug-isUserInGroup] telegramId recebido:', telegramId, typeof telegramId)
-  console.log('[debug-isUserInGroup] TELEGRAM_GROUP_CHAT_ID:', env.TELEGRAM_GROUP_CHAT_ID, typeof env.TELEGRAM_GROUP_CHAT_ID)
-
   try {
-    console.log('[debug-isUserInGroup] chamando getChatMember com:', { chatId: env.TELEGRAM_GROUP_CHAT_ID, userId: telegramId })
     const member = await bot.api.getChatMember(env.TELEGRAM_GROUP_CHAT_ID, telegramId)
-    console.log('[debug-isUserInGroup] resposta da API:', JSON.stringify(member))
     console.log(`[group-check] getChatMember(${telegramId}) → status: ${member.status}`)
     const result = ['member', 'administrator', 'creator', 'restricted'].includes(member.status)
     cache.set(telegramId, { result, expiresAt: now + CACHE_TTL_MS })
@@ -26,7 +21,6 @@ export async function isUserInGroup(telegramId: number): Promise<boolean> {
     console.error(
       `[group-check] getChatMember(${telegramId}) falhou — code: ${e?.error_code}, message: ${e?.message}`
     )
-    console.error('[debug-isUserInGroup] err completo:', err)
     // Não cacheia erro: pode ser falha transitória
     return false
   }
