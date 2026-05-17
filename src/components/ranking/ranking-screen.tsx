@@ -1,27 +1,27 @@
 'use client'
 
-import useSWR from 'swr'
-import { swrFetcher } from '@/lib/api/client'
+import { useState } from 'react'
 import { useTelegram } from '@/components/providers/telegram-provider'
-import type { User } from '@/lib/db/schema'
-
-type UsersResponse = { users: Pick<User, 'id' | 'first_name' | 'last_name' | 'photo_url' | 'telegram_id'>[] }
+import { useRanking } from '@/hooks/use-ranking'
+import { UserDetailDrawer } from './user-detail-drawer'
 
 export function RankingScreen() {
   const { user: me } = useTelegram()
-  const { data, isLoading } = useSWR<UsersResponse>('/api/users', swrFetcher)
+  const { data, isLoading } = useRanking()
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null)
 
-  const sorted = [...(data?.users ?? [])].sort((a, b) =>
-    `${a.first_name} ${a.last_name ?? ''}`.localeCompare(`${b.first_name} ${b.last_name ?? ''}`, 'pt-BR')
-  )
+  const ranking = data?.ranking ?? []
+  const allZero = ranking.every((e) => e.total_points === 0)
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
-      <div className="bg-(--color-bg-surface) rounded-xl p-4 mb-6 text-center">
-        <p className="text-sm text-(--color-text-secondary)">
-          Pontuação será calculada quando a Copa começar. Por enquanto, todos com 0 pontos.
-        </p>
-      </div>
+      {allZero && (
+        <div className="bg-(--color-bg-surface) rounded-xl p-4 mb-6 text-center">
+          <p className="text-sm text-(--color-text-secondary)">
+            Pontuação será calculada quando a Copa começar. Por enquanto, todos com 0 pontos.
+          </p>
+        </div>
+      )}
 
       {isLoading ? (
         <div className="space-y-2">
@@ -31,38 +31,42 @@ export function RankingScreen() {
         </div>
       ) : (
         <div className="space-y-2">
-          {sorted.map((u, i) => {
-            const isMe = u.telegram_id === me?.telegram_id
+          {ranking.map((entry) => {
+            const isMe = entry.telegram_id === me?.telegram_id
             return (
-              <div
-                key={u.id}
-                className={`flex items-center gap-3 p-3 rounded-xl ${
+              <button
+                key={entry.user_id}
+                type="button"
+                className={`w-full flex items-center gap-3 p-3 rounded-xl text-left transition-opacity active:opacity-70 ${
                   isMe
                     ? 'bg-(--color-accent-primary) text-white'
                     : 'bg-(--color-bg-surface)'
                 }`}
+                onClick={() => setSelectedUserId(entry.user_id)}
               >
                 <span
                   className={`font-[family-name:var(--font-tight)] font-black text-lg w-6 text-center ${
                     isMe ? 'text-white' : 'text-(--color-text-secondary)'
                   }`}
                 >
-                  {i + 1}
+                  {entry.position}
                 </span>
 
-                {u.photo_url ? (
+                {entry.photo_url ? (
                   <img
-                    src={u.photo_url}
-                    alt={u.first_name}
+                    src={entry.photo_url}
+                    alt={entry.first_name}
                     className="w-9 h-9 rounded-full object-cover"
                   />
                 ) : (
                   <div
                     className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm ${
-                      isMe ? 'bg-white/20 text-white' : 'bg-(--color-bg-surface) text-(--color-text-primary)'
+                      isMe
+                        ? 'bg-white/20 text-white'
+                        : 'bg-(--color-bg-base) text-(--color-text-primary)'
                     }`}
                   >
-                    {u.first_name[0]}
+                    {entry.first_name[0]}
                   </div>
                 )}
 
@@ -71,7 +75,7 @@ export function RankingScreen() {
                     isMe ? 'text-white' : 'text-(--color-text-primary)'
                   }`}
                 >
-                  {u.first_name} {u.last_name}
+                  {entry.first_name} {entry.last_name}
                 </span>
 
                 <span
@@ -79,13 +83,18 @@ export function RankingScreen() {
                     isMe ? 'text-white' : 'text-(--color-text-primary)'
                   }`}
                 >
-                  0 pts
+                  {entry.total_points} pts
                 </span>
-              </div>
+              </button>
             )
           })}
         </div>
       )}
+
+      <UserDetailDrawer
+        userId={selectedUserId}
+        onClose={() => setSelectedUserId(null)}
+      />
     </div>
   )
 }

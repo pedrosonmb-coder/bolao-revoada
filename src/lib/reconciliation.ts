@@ -7,6 +7,7 @@ import { fetchMatchFromFifa } from './data-sources/fifa'
 import { fetchMatchFromGE } from './data-sources/ge'
 import { fetchMatchFromWikipedia } from './data-sources/wikipedia'
 import type { MatchSnapshot } from './data-sources/types'
+import { recalculateMatchPredictions } from './scoring/recalculate-match-predictions'
 
 export type ReconciliationResult =
   | { kind: 'agreed'; snapshot: MatchSnapshot; agreeing_sources: string[] }
@@ -182,8 +183,12 @@ export async function applyReconciliation(
           .set({ result_locked_at: new Date() })
           .where(eq(matches.id, matchId))
         locked = true
-        // Dispara recálculo de pontuação (Fase 5)
-        console.log(`[reconciliation] Match ${matchId} LOCKED — aguarda Fase 5 para recálculo`)
+        try {
+          const recalc = await recalculateMatchPredictions(matchId)
+          console.log(`[reconciliation] match ${matchId} LOCKED. Recalculated ${recalc.updated} predictions.`)
+        } catch (err) {
+          console.error(`[reconciliation] match ${matchId} LOCKED, but recalculation FAILED:`, err)
+        }
       }
     }
   }
