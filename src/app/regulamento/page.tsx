@@ -40,7 +40,7 @@ export default function RegulamentoPage() {
         </h1>
 
         <p className="text-[#737373] text-sm mb-8">
-          Bolão do Revoada — Copa do Mundo FIFA 2026. 10 participantes, R$ 1.000 em jogo, 104 jogos.
+          Bolão do Revoada — Copa do Mundo FIFA 2026. 9 participantes, R$ 900 em jogo, 104 jogos.
         </p>
 
         {/* 4.1 Pontuação — fase de grupos */}
@@ -212,9 +212,9 @@ export default function RegulamentoPage() {
           <table className="w-full text-sm border-collapse">
             <tbody>
               {[
-                ['1º lugar', 'R$ 700', '70%'],
-                ['2º lugar', 'R$ 200', '20%'],
-                ['3º lugar', 'R$ 100', '10%'],
+                ['1º lugar', 'R$ 630', '70%'],
+                ['2º lugar', 'R$ 180', '20%'],
+                ['3º lugar', 'R$ 90', '10%'],
               ].map(([pos, valor, pct]) => (
                 <tr
                   key={pos}

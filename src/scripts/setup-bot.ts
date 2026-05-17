@@ -8,7 +8,7 @@ async function main() {
   console.log('✓ Nome configurado')
 
   await bot.api.setMyDescription(
-    'Bot do Bolão do Revoada. Copa do Mundo 2026, R$ 1.000 em jogo. 10 amigos, 104 jogos, zero corpo mole.'
+    'Bot do Bolão do Revoada. Copa do Mundo 2026, R$ 900 em jogo. 9 amigos, 104 jogos, zero corpo mole.'
   )
   console.log('✓ Descrição configurada')
 
