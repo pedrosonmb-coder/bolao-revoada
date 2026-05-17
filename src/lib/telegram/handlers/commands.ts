@@ -48,8 +48,8 @@ export async function handleStart(ctx: Context): Promise<void> {
   const telegramUser = ctx.from
   if (!telegramUser) return
 
-  if (isGroupChat(ctx) && !isOfficialGroup(ctx)) {
-    await ctx.reply(wrongGroupMessage())
+  if (isGroupChat(ctx)) {
+    await ctx.reply('Esse comando funciona melhor em DM com o bot.')
     return
   }
 
@@ -90,16 +90,17 @@ export async function handleStart(ctx: Context): Promise<void> {
 }
 
 export async function handlePalpitar(ctx: Context): Promise<void> {
+  if (isGroupChat(ctx)) {
+    await ctx.reply('Esse comando funciona melhor em DM com o bot.')
+    return
+  }
+
   const ok = await guardCommand(ctx)
   if (!ok) return
 
   const url = `${env.NEXT_PUBLIC_APP_URL}?tab=palpitar`
   const keyboard = new InlineKeyboard().webApp('🎯 Abrir palpites', url)
-
-  let text = 'Palpites abertos. Toque pra abrir o app.'
-  if (isGroupChat(ctx)) text += '\n\n(Funciona melhor no privado com o bot.)'
-
-  await ctx.reply(text, { reply_markup: keyboard })
+  await ctx.reply('Palpites abertos. Toque pra abrir o app.', { reply_markup: keyboard })
 }
 
 export async function handleRanking(ctx: Context): Promise<void> {
@@ -127,9 +128,8 @@ export async function handleRanking(ctx: Context): Promise<void> {
   }))
 
   const url = `${env.NEXT_PUBLIC_APP_URL}?tab=ranking`
-  const keyboard = new InlineKeyboard().webApp('Ver detalhes', url)
-
-  await ctx.reply(rankingMessage(rankings), { reply_markup: keyboard })
+  const keyboard = isGroupChat(ctx) ? undefined : new InlineKeyboard().webApp('Ver detalhes', url)
+  await ctx.reply(rankingMessage(rankings), keyboard ? { reply_markup: keyboard } : {})
 }
 
 export async function handleMeusPontos(ctx: Context): Promise<void> {
@@ -151,13 +151,10 @@ export async function handleMeusPontos(ctx: Context): Promise<void> {
 
   const total = Number(result?.total ?? 0)
 
+  const text = myPointsMessage(user, total)
   const url = `${env.NEXT_PUBLIC_APP_URL}?tab=ranking`
-  const keyboard = new InlineKeyboard().webApp('Ver detalhes', url)
-
-  let text = myPointsMessage(user, total)
-  if (isGroupChat(ctx)) text += '\n\n(Detalhes no privado com o bot.)'
-
-  await ctx.reply(text, { reply_markup: keyboard })
+  const keyboard = isGroupChat(ctx) ? undefined : new InlineKeyboard().webApp('Ver detalhes', url)
+  await ctx.reply(text, keyboard ? { reply_markup: keyboard } : {})
 }
 
 export async function handleProximo(ctx: Context): Promise<void> {
@@ -188,9 +185,8 @@ export async function handleProximo(ctx: Context): Promise<void> {
   }
 
   const url = `${env.NEXT_PUBLIC_APP_URL}?tab=palpitar&match=${match.id}`
-  const keyboard = new InlineKeyboard().webApp('🎯 Palpitar', url)
-
-  await ctx.reply(nextMatchMessage(match, userPrediction), { reply_markup: keyboard })
+  const keyboard = isGroupChat(ctx) ? undefined : new InlineKeyboard().webApp('🎯 Palpitar', url)
+  await ctx.reply(nextMatchMessage(match, userPrediction), keyboard ? { reply_markup: keyboard } : {})
 }
 
 export async function handleJogosDoDia(ctx: Context): Promise<void> {
@@ -213,9 +209,8 @@ export async function handleRegulamento(ctx: Context): Promise<void> {
   if (!ok) return
 
   const url = `${env.NEXT_PUBLIC_APP_URL}/regulamento`
-  const keyboard = new InlineKeyboard().webApp('📋 Ver regulamento', url)
-
-  await ctx.reply('As regras do bolão.', { reply_markup: keyboard })
+  const keyboard = isGroupChat(ctx) ? undefined : new InlineKeyboard().webApp('📋 Ver regulamento', url)
+  await ctx.reply('As regras do bolão.', keyboard ? { reply_markup: keyboard } : {})
 }
 
 export async function handleAjuda(ctx: Context): Promise<void> {
