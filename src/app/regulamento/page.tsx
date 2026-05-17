@@ -106,7 +106,7 @@ export default function RegulamentoPage() {
         {/* 4.4 Palpites de torneio */}
         <section className="mb-8">
           <h2 className="font-bold text-base mb-3">Palpites de torneio</h2>
-          <p className="text-sm text-(--color-text-secondary) mb-3">Feitos antes do apito inicial. Máximo: 375 pts.</p>
+          <p className="text-sm text-(--color-text-secondary) mb-3">Feitos antes do apito inicial. Máximo: 325 pts.</p>
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr className="border-b border-(--color-border-base)">
@@ -118,7 +118,7 @@ export default function RegulamentoPage() {
               {[
                 ['Campeão', '100'],
                 ['Vice-campeão', '50'],
-                ['Cada semifinalista (até 4)', '25'],
+                ['Cada semifinalista (até 2)', '25'],
                 ['Artilheiro da Copa', '50'],
                 ['Melhor jogador (Bola de Ouro Adidas)', '50'],
                 ['Melhor jovem (Young Player Award FIFA)', '25'],

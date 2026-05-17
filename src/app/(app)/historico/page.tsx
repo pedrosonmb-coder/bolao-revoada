@@ -3,7 +3,7 @@
 import useSWR from 'swr'
 import { BackButton } from '@/components/layout/back-button'
 import { swrFetcher } from '@/lib/api/client'
-import { getFlagEmoji } from '@/lib/flags'
+import { getTeamDisplay } from '@/lib/teams'
 import type { Match } from '@/lib/db/schema'
 import type { MyPrediction } from '@/hooks/use-my-predictions'
 
@@ -74,16 +74,16 @@ export default function HistoricoPage() {
                 key={p.match_id}
                 className="bg-(--color-bg-surface) rounded-xl px-4 py-3 flex items-center gap-3"
               >
-                <span className="text-sm flex items-center gap-1.5">
-                  <span>{getFlagEmoji(p.match.home_team_code)}</span>
-                  {p.match.home_team_code}
+                <span className="flex items-center gap-1 min-w-0">
+                  <span className="text-lg leading-none shrink-0">{getTeamDisplay(p.match.home_team_code).flag}</span>
+                  <span className="text-xs text-(--color-text-primary) truncate">{getTeamDisplay(p.match.home_team_code).name}</span>
                 </span>
-                <span className="font-[family-name:var(--font-tight)] font-black text-base">
+                <span className="font-[family-name:var(--font-tight)] font-black text-base shrink-0">
                   {p.home_score} × {p.away_score}
                 </span>
-                <span className="text-sm flex items-center gap-1.5">
-                  {p.match.away_team_code}
-                  <span>{getFlagEmoji(p.match.away_team_code)}</span>
+                <span className="flex items-center gap-1 min-w-0 justify-end">
+                  <span className="text-xs text-(--color-text-primary) truncate">{getTeamDisplay(p.match.away_team_code).name}</span>
+                  <span className="text-lg leading-none shrink-0">{getTeamDisplay(p.match.away_team_code).flag}</span>
                 </span>
                 {p.updated_at && (
                   <span className="ml-auto text-xs text-(--color-text-secondary)">

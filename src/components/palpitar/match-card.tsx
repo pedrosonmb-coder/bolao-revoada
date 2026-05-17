@@ -7,7 +7,7 @@ import { ClassificationSelector } from './classification-selector'
 import { useDebouncedSave } from '@/hooks/use-debounced-save'
 import { savePrediction } from '@/lib/api/predictions'
 import { useToast } from '@/components/ui/toast'
-import { getFlagEmoji } from '@/lib/flags'
+import { getTeamDisplay } from '@/lib/teams'
 import type { Match } from '@/lib/db/schema'
 import type { MyPrediction } from '@/hooks/use-my-predictions'
 
@@ -45,6 +45,8 @@ export function MatchCard({ match, prediction, onSaved }: MatchCardProps) {
 
   const isKnockout = match.stage !== 'group'
   const isDraw = homeScore === awayScore
+  const homeDisplay = getTeamDisplay(match.home_team_code)
+  const awayDisplay = getTeamDisplay(match.away_team_code)
 
   const doSave = useCallback(
     async (hs: number, as_: number, qtc: 'home' | 'away' | null) => {
@@ -101,15 +103,15 @@ export function MatchCard({ match, prediction, onSaved }: MatchCardProps) {
       } bg-(--color-bg-base) relative`}
     >
       {/* Times */}
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-sm font-medium text-(--color-text-primary) flex items-center gap-1.5">
-          <span>{getFlagEmoji(match.home_team_code)}</span>
-          {match.home_team_code.toUpperCase()}
+      <div className="flex items-center justify-between mb-3 gap-2">
+        <span className="text-sm font-medium text-(--color-text-primary) flex items-center gap-1.5 min-w-0 flex-1">
+          <span className="shrink-0 text-xl leading-none">{homeDisplay.flag}</span>
+          <span className="truncate">{homeDisplay.name}</span>
         </span>
-        <span className="text-xs text-(--color-text-secondary)">vs</span>
-        <span className="text-sm font-medium text-(--color-text-primary) flex items-center gap-1.5">
-          {match.away_team_code.toUpperCase()}
-          <span>{getFlagEmoji(match.away_team_code)}</span>
+        <span className="text-xs text-(--color-text-secondary) shrink-0 px-1">vs</span>
+        <span className="text-sm font-medium text-(--color-text-primary) flex items-center gap-1.5 min-w-0 flex-1 justify-end">
+          <span className="truncate text-right">{awayDisplay.name}</span>
+          <span className="shrink-0 text-xl leading-none">{awayDisplay.flag}</span>
         </span>
       </div>
 

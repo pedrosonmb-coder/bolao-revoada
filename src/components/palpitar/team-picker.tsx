@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { ChevronDown, Search } from 'lucide-react'
 import useSWR from 'swr'
 import { swrFetcher } from '@/lib/api/client'
-import { getFlagEmoji } from '@/lib/flags'
+import { getTeamDisplay } from '@/lib/teams'
 
 type Team = { code: string; name: string }
 
@@ -55,11 +55,14 @@ export function TeamPicker({ value, onChange, placeholder = 'Selecionar seleçã
           disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-(--color-bg-surface)'
         } bg-(--color-bg-base) border-(--color-border-base) text-(--color-text-primary)`}
       >
-        <span className={selectedTeam ? 'text-(--color-text-primary)' : 'text-(--color-text-secondary)'}>
-          {selectedTeam
-            ? `${getFlagEmoji(selectedTeam.code)} ${selectedTeam.name}`
-            : placeholder}
-        </span>
+        {selectedTeam ? (
+          <span className="text-(--color-text-primary) flex items-center gap-1.5">
+            <span>{getTeamDisplay(selectedTeam.code).flag}</span>
+            <span>{getTeamDisplay(selectedTeam.code).name}</span>
+          </span>
+        ) : (
+          <span className="text-(--color-text-secondary)">{placeholder}</span>
+        )}
         <ChevronDown size={14} className={`text-(--color-text-secondary) transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
@@ -91,8 +94,8 @@ export function TeamPicker({ value, onChange, placeholder = 'Selecionar seleçã
                 }}
                 className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-left hover:bg-(--color-bg-surface) transition-colors text-(--color-text-primary)"
               >
-                <span>{getFlagEmoji(t.code)}</span>
-                <span>{t.name}</span>
+                <span>{getTeamDisplay(t.code).flag}</span>
+                <span>{getTeamDisplay(t.code).name}</span>
                 <span className="ml-auto text-xs text-(--color-text-secondary)">{t.code}</span>
               </button>
             ))}

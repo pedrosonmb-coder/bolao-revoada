@@ -5,7 +5,7 @@ import useSWR from 'swr'
 import { swrFetcher } from '@/lib/api/client'
 import { useTelegram } from '@/components/providers/telegram-provider'
 import { useMyPredictions } from '@/hooks/use-my-predictions'
-import { getFlagEmoji } from '@/lib/flags'
+import { getTeamDisplay } from '@/lib/teams'
 import type { Match } from '@/lib/db/schema'
 
 function formatKickoff(d: Date | string): string {
@@ -93,7 +93,7 @@ export default function HomePage() {
         <div className="bg-(--color-bg-surface) rounded-xl p-4">
           <p className="text-xs text-(--color-text-secondary) mb-1">Próximo jogo</p>
           <p className="font-medium text-(--color-text-primary) text-sm">
-            {getFlagEmoji(nextMatch.home_team_code)} {nextMatch.home_team_name} vs {nextMatch.away_team_name} {getFlagEmoji(nextMatch.away_team_code)}
+            {getTeamDisplay(nextMatch.home_team_code).flag} {getTeamDisplay(nextMatch.home_team_code).name} vs {getTeamDisplay(nextMatch.away_team_code).name} {getTeamDisplay(nextMatch.away_team_code).flag}
           </p>
           <p className="text-xs text-(--color-text-secondary) mt-1">
             {formatKickoff(nextMatch.kickoff_at)}
@@ -122,7 +122,7 @@ export default function HomePage() {
                   className="flex items-center gap-2 bg-(--color-bg-surface) rounded-xl px-4 py-3"
                 >
                   <span className="text-sm text-(--color-text-primary) flex-1 truncate">
-                    {getFlagEmoji(m.home_team_code)} {m.home_team_code.toUpperCase()} vs {m.away_team_code.toUpperCase()} {getFlagEmoji(m.away_team_code)}
+                    {getTeamDisplay(m.home_team_code).flag} {getTeamDisplay(m.home_team_code).name} vs {getTeamDisplay(m.away_team_code).name} {getTeamDisplay(m.away_team_code).flag}
                   </span>
                   <span className="text-xs text-(--color-text-secondary) shrink-0">
                     {formatKickoff(m.kickoff_at)}
