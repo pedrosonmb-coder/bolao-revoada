@@ -4,6 +4,7 @@ import useSWR from 'swr'
 import { BackButton } from '@/components/layout/back-button'
 import { swrFetcher } from '@/lib/api/client'
 import { getTeamDisplay } from '@/lib/teams'
+import { EmptyState } from '@/components/ui/empty-state'
 import type { Match } from '@/lib/db/schema'
 import type { MyPrediction } from '@/hooks/use-my-predictions'
 
@@ -58,9 +59,10 @@ export default function HistoricoPage() {
       )}
 
       {!isLoading && (data?.predictions?.length ?? 0) === 0 && (
-        <p className="text-(--color-text-secondary) text-sm text-center py-12">
-          Nenhum palpite ainda. Coragem.
-        </p>
+        <EmptyState
+          title="Sem palpites ainda. Vergonha."
+          action={{ label: 'Palpitar agora', href: '/palpitar' }}
+        />
       )}
 
       {Array.from(byStage.entries()).map(([stage, preds]) => (

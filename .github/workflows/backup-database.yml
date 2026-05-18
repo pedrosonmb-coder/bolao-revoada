@@ -1,0 +1,64 @@
+name: Backup Database
+
+on:
+  schedule:
+    # 06:00 UTC = 03:00 BRT
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Turso CLI
+        run: curl -sSfL https://get.tur.so/install.sh | bash
+        env:
+          TURSO_INSTALL_DIR: /usr/local/bin
+
+      - name: Create database dump
+        run: |
+          DATE=$(date +%Y-%m-%d)
+          turso db shell "$TURSO_DATABASE_URL" --auth-token "$TURSO_AUTH_TOKEN" ".dump" > "backup-${DATE}.sql"
+          gzip "backup-${DATE}.sql"
+          echo "BACKUP_FILE=backup-${DATE}.sql.gz" >> "$GITHUB_ENV"
+          echo "BACKUP_DATE=${DATE}" >> "$GITHUB_ENV"
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+
+      - name: Create GitHub Release with backup
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: backup-${{ env.BACKUP_DATE }}
+          name: Backup ${{ env.BACKUP_DATE }}
+          body: Backup automático do banco de dados Turso — ${{ env.BACKUP_DATE }}
+          files: ${{ env.BACKUP_FILE }}
+          prerelease: true
+          make_latest: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Delete backups older than 30 days
+        run: |
+          CUTOFF=$(date -d '30 days ago' +%Y-%m-%d)
+          gh release list --limit 100 --json tagName,publishedAt \
+            | jq -r '.[] | select(.tagName | startswith("backup-")) | .tagName' \
+            | while read tag; do
+                DATE="${tag#backup-}"
+                if [[ "$DATE" < "$CUTOFF" ]]; then
+                  echo "Deletando release antiga: $tag"
+                  gh release delete "$tag" --yes --cleanup-tag || true
+                fi
+              done
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Notify on failure
+        if: failure()
+        run: echo "::error::Backup falhou em $(date). Verifique os logs do workflow."

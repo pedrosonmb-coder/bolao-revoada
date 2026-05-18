@@ -7,7 +7,7 @@ Bolão privado da Copa do Mundo FIFA 2026 para 9 amigos. Mini App do Telegram co
 | Camada | Tecnologia |
 |---|---|
 | Framework | Next.js 15 (App Router) + TypeScript |
-| UI | Tailwind CSS 4 + shadcn/ui (fases futuras) |
+| UI | Tailwind CSS 4 |
 | Banco | Turso (libSQL serverless) |
 | ORM | Drizzle ORM |
 | Bot | grammY |
@@ -56,15 +56,37 @@ Veja `.env.example` para a lista completa. As principais:
 ## Scripts
 
 ```bash
-pnpm dev          # Dev com Turbopack
-pnpm build        # Build de produção
-pnpm start        # Inicia build de produção
-pnpm db:generate  # Gera migrations Drizzle
-pnpm db:migrate   # Aplica migrations no banco
-pnpm db:studio    # Abre Drizzle Studio (UI do banco)
-pnpm lint         # ESLint
+pnpm dev                   # Dev com Turbopack
+pnpm build                 # Build de produção
+pnpm db:generate           # Gera migrations Drizzle
+pnpm db:migrate            # Aplica migrations no banco
+pnpm db:studio             # Drizzle Studio (UI do banco)
+pnpm test                  # Testes unitários (vitest)
+pnpm test:scoring          # Teste E2E de scoring
+pnpm test:notifications    # Teste E2E de notificações
 ```
 
-## Especificação completa
+## Documentação
 
-Consulte `docs/spec.md` para a especificação técnica completa: regras de negócio, schema, endpoints, fluxos, segurança e mais.
+| Documento | Descrição |
+|---|---|
+| [docs/spec.md](docs/spec.md) | Especificação técnica completa |
+| [docs/ADMIN-RUNBOOK.md](docs/ADMIN-RUNBOOK.md) | Guia operacional para o admin |
+| [docs/SETUP-CHECKLIST.md](docs/SETUP-CHECKLIST.md) | Checklist pré-Copa |
+| [docs/backup-restore.md](docs/backup-restore.md) | Backup e restore do banco |
+
+## Healthcheck
+
+```
+GET /api/health
+```
+
+Retorna `200 ok`, `200 degraded` ou `503 down`. Use com UptimeRobot ou similar para monitoramento 24/7.
+
+## Painel admin
+
+Acessível em `/admin` no Mini App (requer `is_admin = true`). Permite:
+- Gerenciar usuários (pagamento, ativação)
+- Forçar resultados manuais e aplicar W.O.
+- Recalcular pontuações
+- Monitorar status do sistema e crons

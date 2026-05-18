@@ -4,6 +4,43 @@ import { useState } from 'react'
 import { useTelegram } from '@/components/providers/telegram-provider'
 import { useRanking } from '@/hooks/use-ranking'
 import { UserDetailDrawer } from './user-detail-drawer'
+import { EmptyState } from '@/components/ui/empty-state'
+
+function MedalIcon({ position }: { position: number }) {
+  if (position > 3) return null
+  const colors = ['#FFD700', '#C0C0C0', '#CD7F32']
+  const color = colors[position - 1]
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
+      <circle cx="10" cy="10" r="9" fill={color} />
+      <text
+        x="10"
+        y="14"
+        textAnchor="middle"
+        fontSize="10"
+        fontWeight="bold"
+        fill="white"
+        fontFamily="sans-serif"
+      >
+        {position}
+      </text>
+    </svg>
+  )
+}
+
+function PositionDelta({ current, prev }: { current: number; prev: number | null }) {
+  if (prev === null) return null
+  const delta = prev - current // positivo = subiu (posição menor = melhor)
+  if (delta === 0) return null
+  const up = delta > 0
+  return (
+    <span
+      className={`text-xs font-bold ${up ? 'text-green-500' : 'text-red-500'}`}
+    >
+      {up ? '+' : ''}{delta}
+    </span>
+  )
+}
 
 export function RankingScreen() {
   const { user: me } = useTelegram()
@@ -29,10 +66,14 @@ export function RankingScreen() {
             <div key={i} className="h-14 bg-(--color-bg-surface) rounded-xl animate-pulse" />
           ))}
         </div>
+      ) : ranking.length === 0 ? (
+        <EmptyState title="Calmo aqui." description="Já já enche." />
       ) : (
         <div className="space-y-2">
           {ranking.map((entry) => {
             const isMe = entry.telegram_id === me?.telegram_id
+            const isTop3 = entry.position <= 3
+
             return (
               <button
                 key={entry.user_id}
@@ -44,12 +85,18 @@ export function RankingScreen() {
                 }`}
                 onClick={() => setSelectedUserId(entry.user_id)}
               >
-                <span
-                  className={`font-[family-name:var(--font-tight)] font-black text-lg w-6 text-center ${
-                    isMe ? 'text-white' : 'text-(--color-text-secondary)'
-                  }`}
-                >
-                  {entry.position}
+                <span className="w-6 flex items-center justify-center shrink-0">
+                  {isTop3 ? (
+                    <MedalIcon position={entry.position} />
+                  ) : (
+                    <span
+                      className={`font-[family-name:var(--font-tight)] font-black text-lg ${
+                        isMe ? 'text-white' : 'text-(--color-text-secondary)'
+                      }`}
+                    >
+                      {entry.position}
+                    </span>
+                  )}
                 </span>
 
                 {entry.photo_url ? (
@@ -77,6 +124,8 @@ export function RankingScreen() {
                 >
                   {entry.first_name} {entry.last_name}
                 </span>
+
+                <PositionDelta current={entry.position} prev={entry.prev_position} />
 
                 <span
                   className={`font-[family-name:var(--font-tight)] font-bold text-sm ${

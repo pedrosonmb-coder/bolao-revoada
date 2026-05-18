@@ -70,7 +70,7 @@ export async function getRanking(): Promise<RankingEntry[]> {
       exact_scores,
       winners_correct,
       position: 0,
-      prev_position: null,
+      prev_position: u.previous_position ?? null,
     }
   })
 

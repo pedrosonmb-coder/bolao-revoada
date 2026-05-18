@@ -2,6 +2,7 @@
   "crons": [
     { "path": "/api/cron/morning-digest", "schedule": "0 12 * * *" },
     { "path": "/api/cron/evening-summary", "schedule": "0 2 * * *" },
-    { "path": "/api/cron/weekly-recap", "schedule": "0 1 * * 1" }
+    { "path": "/api/cron/weekly-recap", "schedule": "0 1 * * 1" },
+    { "path": "/api/cron/snapshot-ranking", "schedule": "0 7 * * *" }
   ]
 }

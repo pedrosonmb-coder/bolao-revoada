@@ -16,6 +16,8 @@ export const users = sqliteTable(
     is_admin: integer('is_admin', { mode: 'boolean' }).notNull().default(false),
     is_active: integer('is_active', { mode: 'boolean' }).notNull().default(true),
     paid_at: integer('paid_at', { mode: 'timestamp' }),
+    previous_position: integer('previous_position'),
+    position_snapshot_at: integer('position_snapshot_at', { mode: 'timestamp' }),
     created_at: integer('created_at', { mode: 'timestamp' })
       .notNull()
       .default(sql`(unixepoch())`),
@@ -58,6 +60,7 @@ export const matches = sqliteTable(
     // 'home' | 'away' | 'draw'
     winner_code: text('winner_code'),
     qualified_team_code: text('qualified_team_code'),
+    override_by_admin: integer('override_by_admin', { mode: 'boolean' }).notNull().default(false),
     result_locked_at: integer('result_locked_at', { mode: 'timestamp' }),
     predictions_close_at: integer('predictions_close_at', { mode: 'timestamp' }).notNull(),
     fifa_payload: text('fifa_payload'),
