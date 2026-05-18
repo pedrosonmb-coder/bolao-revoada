@@ -1,8 +1,11 @@
 import type { Match, Prediction, User } from '@/lib/db/schema'
 import { PRODUCT_CONFIG, TOTAL_PRIZE_BRL } from '@/lib/config'
 import { getFlagEmoji } from './flags'
+import { getTeamDisplay } from '@/lib/teams'
+import type { RankingEntry } from '@/lib/scoring/ranking'
 
-export type RankingEntry = {
+// Tipo leve para o /ranking do bot (commands.ts usa esse)
+export type BotRankingEntry = {
   first_name: string
   telegram_username: string | null
   total_points: number
@@ -30,7 +33,7 @@ export function welcomeMessage(firstName: string): string {
   )
 }
 
-export function rankingMessage(rankings: RankingEntry[]): string {
+export function rankingMessage(rankings: BotRankingEntry[]): string {
   if (rankings.length === 0) {
     return 'Ninguém cadastrado ainda. Cadê o pessoal?'
   }
@@ -46,7 +49,7 @@ export function rankingMessage(rankings: RankingEntry[]): string {
   return `🏆 Ranking — Bolão do Revoada\n\n${lines.join('\n')}`
 }
 
-export function myPointsMessage(user: User, totalPoints: number): string {
+export function myPointsMessage(_user: User, totalPoints: number): string {
   if (totalPoints === 0) {
     return `Você tem 0 pontos. Copa ainda nem começou, calma.`
   }
@@ -131,9 +134,147 @@ export function fallbackDmMessage(): string {
   return 'Manda comando ou aperta /ajuda. Aqui só comando.'
 }
 
-export function welcomeGroupMessage(firstName: string, botUsername: string): string {
+export function welcomeGroupMessage(firstName: string, _botUsername: string): string {
   return (
     `${firstName}, bem-vindo ao Bolão do Revoada.\n` +
     `Toque no botão abaixo pra iniciar conversa privada com o bot.`
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Formatters de notificações automáticas (Fase 6)
+// ---------------------------------------------------------------------------
+
+function formatTime(kickoffAt: Date | number): string {
+  const d = kickoffAt instanceof Date ? kickoffAt : new Date((kickoffAt as number) * 1000)
+  return new Intl.DateTimeFormat('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(d)
+}
+
+function formatMatchLine(m: Match): string {
+  const { flag: hf, name: hName } = getTeamDisplay(m.home_team_code)
+  const { flag: af, name: aName } = getTeamDisplay(m.away_team_code)
+  const t = formatTime(m.kickoff_at instanceof Date ? m.kickoff_at : new Date((m.kickoff_at as number) * 1000))
+  return `${hf} ${hName} x ${aName} ${af} — ${t}`
+}
+
+export function morningDigestMessage(
+  todayMatches: Match[],
+  usersWithoutByMatch: { match_id: number; users: User[] }[]
+): string {
+  const plural = todayMatches.length === 1 ? 'jogo hoje' : 'jogos hoje'
+  const lines: string[] = [`Bom dia. ${todayMatches.length} ${plural}.`, '']
+
+  for (const m of todayMatches) {
+    lines.push(formatMatchLine(m))
+    const missing = usersWithoutByMatch.find((x) => x.match_id === m.id)?.users ?? []
+    if (missing.length > 0) {
+      const mentions = missing.map((u) => u.telegram_username ? `@${u.telegram_username}` : u.first_name).join(' ')
+      lines.push(`  Sem palpite: ${mentions}. Andem.`)
+    }
+  }
+
+  return lines.join('\n')
+}
+
+export function preMatchTopMessage(match: Match, usersWithoutPrediction: User[]): string {
+  const { flag: hf, name: hName } = getTeamDisplay(match.home_team_code)
+  const { flag: af, name: aName } = getTeamDisplay(match.away_team_code)
+  const t = formatTime(match.kickoff_at instanceof Date ? match.kickoff_at : new Date((match.kickoff_at as number) * 1000))
+
+  let base = `⏱ ${hf} ${hName} x ${aName} ${af} — ${t}.`
+
+  if (usersWithoutPrediction.length > 0) {
+    const mentions = usersWithoutPrediction
+      .map((u) => u.telegram_username ? `@${u.telegram_username}` : u.first_name)
+      .join(' ')
+    base += ` Sem palpite: ${mentions}. Andem.`
+  }
+
+  return base
+}
+
+export function preMatchDmMessage(match: Match, appUrl: string): string {
+  const { flag: hf, name: hName } = getTeamDisplay(match.home_team_code)
+  const { flag: af, name: aName } = getTeamDisplay(match.away_team_code)
+  const t = formatTime(match.kickoff_at instanceof Date ? match.kickoff_at : new Date((match.kickoff_at as number) * 1000))
+  return (
+    `${hf} ${hName} x ${aName} ${af} em ${t}.\n` +
+    `Você ainda não palpitou. Toque pra abrir: ${appUrl}`
+  )
+}
+
+export function postMatchTopMessage(match: Match, topN: RankingEntry[]): string {
+  const { flag: hf, name: hName } = getTeamDisplay(match.home_team_code)
+  const { flag: af, name: aName } = getTeamDisplay(match.away_team_code)
+  const result = `${match.home_score ?? '?'}x${match.away_score ?? '?'}`
+  const lines: string[] = [`${hf} ${hName} ${result} ${aName} ${af}.`]
+
+  if (topN.length > 0) {
+    lines.push('')
+    lines.push('Top do ranking:')
+    for (const e of topN) {
+      lines.push(`${e.position}. ${e.first_name} — ${e.total_points} pts`)
+    }
+  }
+
+  return lines.join('\n')
+}
+
+export function eveningSummaryMessage(finishedMatches: Match[], topN: RankingEntry[]): string {
+  const plural = finishedMatches.length === 1 ? 'jogo' : 'jogos'
+  const lines: string[] = [`Fim do dia. ${finishedMatches.length} ${plural} finalizados.`]
+
+  for (const m of finishedMatches) {
+    const { flag: hf, name: hName } = getTeamDisplay(m.home_team_code)
+    const { flag: af, name: aName } = getTeamDisplay(m.away_team_code)
+    lines.push(`${hf} ${hName} ${m.home_score ?? '?'}x${m.away_score ?? '?'} ${aName} ${af}`)
+  }
+
+  if (topN.length > 0) {
+    lines.push('')
+    lines.push('Top 3:')
+    for (const e of topN) {
+      lines.push(`${e.position}. ${e.first_name} — ${e.total_points} pts`)
+    }
+  }
+
+  return lines.join('\n')
+}
+
+const STAGE_LABEL_PT: Record<string, string> = {
+  r32: '32-avos de final',
+  r16: '16-avos de final',
+  qf: 'quartas de final',
+  sf: 'semifinais',
+  '3rd': 'disputa de terceiro lugar',
+  final: 'final',
+}
+
+export function phaseOpenMessage(stage: string, closesAt: Date): string {
+  const label = STAGE_LABEL_PT[stage] ?? stage
+  const closes = new Intl.DateTimeFormat('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(closesAt)
+  return `Palpites das ${label} abertos. Fecha em ${closes}. Quem não palpitar fica de fora.`
+}
+
+export function reconciliationAlertMessage(
+  matchId: number,
+  home: string,
+  away: string,
+  adminUrl: string
+): string {
+  return (
+    `⚠️ Conflito persistente: ${home} x ${away} (match_id=${matchId}).\n` +
+    `5+ ciclos sem consenso entre as fontes.\n` +
+    `Veja: ${adminUrl}`
   )
 }

@@ -22,13 +22,23 @@ Após o deploy da Fase 2 na Vercel, cadastrar estes 3 jobs em https://cron-job.o
 - **Headers:** `Authorization: Bearer <CRON_SECRET>`
 - **Enabled:** SIM, ativar a partir de **01/06/2026** (com os palpites abrindo)
 
-## Job 3: Pre-match reminder (DM para quem não palpitou)
+## Job 3: Pre-match reminder (grupo + DM para quem não palpitou)
 
 - **Title:** Bolão - Pre-Match Reminder
 - **URL:** `https://bolao-revoada.vercel.app/api/cron/pre-match-reminder`
-- **Schedule:** Every 15 minutes
+- **Schedule:** Every 5 minutes
+- **Request Method:** GET
 - **Headers:** `Authorization: Bearer <CRON_SECRET>`
-- **Enabled:** Será configurado na Fase 6 — deixe criado mas **desabilitado** por enquanto.
+- **Enabled:** Ativar a partir de **01/06/2026** (quando os palpites abrem)
+
+## Job 4: Post-match summary (resultado + ranking no grupo)
+
+- **Title:** Bolão - Post-Match Summary
+- **URL:** `https://bolao-revoada.vercel.app/api/cron/post-match-summary`
+- **Schedule:** Every 5 minutes
+- **Request Method:** GET
+- **Headers:** `Authorization: Bearer <CRON_SECRET>`
+- **Enabled:** Ativar a partir de **11/06/2026** (início da Copa)
 
 ---
 

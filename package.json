@@ -16,7 +16,8 @@
     "setup:webhook": "dotenv -e .env.local -- tsx src/scripts/setup-webhook.ts",
     "fix:chat-id": "dotenv -e .env.local -- tsx src/scripts/fix-chat-id.ts",
     "test": "vitest run",
-    "test:scoring": "dotenv -e .env.local -- tsx src/scripts/test-scoring.ts"
+    "test:scoring": "dotenv -e .env.local -- tsx src/scripts/test-scoring.ts",
+    "test:notifications": "dotenv -e .env.local -- tsx src/scripts/test-notifications.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.36.0",

@@ -1,6 +1,6 @@
 import { db } from '@/lib/db'
 import { matches, matchSnapshots } from '@/lib/db/schema'
-import { eq, desc } from 'drizzle-orm'
+import { eq, desc, sql } from 'drizzle-orm'
 import type { Match } from '@/lib/db/schema'
 import { fetchMatchFromFootballData } from './data-sources/football-data'
 import { fetchMatchFromFifa } from './data-sources/fifa'
@@ -8,6 +8,10 @@ import { fetchMatchFromGE } from './data-sources/ge'
 import { fetchMatchFromWikipedia } from './data-sources/wikipedia'
 import type { MatchSnapshot } from './data-sources/types'
 import { recalculateMatchPredictions } from './scoring/recalculate-match-predictions'
+import { checkAndNotifyPhaseOpen } from './notifications/phase-open'
+import { alertAdminConflict } from './notifications/admin-alert'
+
+const CONFLICT_ALERT_THRESHOLD = 5
 
 export type ReconciliationResult =
   | { kind: 'agreed'; snapshot: MatchSnapshot; agreeing_sources: string[] }
@@ -126,6 +130,22 @@ export async function applyReconciliation(
   }
 
   if (result.kind === 'conflict') {
+    // Incrementa contador de conflitos e alerta admin se ultrapassar o limiar
+    const [updated] = await db
+      .update(matches)
+      .set({ disagreement_count: sql`${matches.disagreement_count} + 1` })
+      .where(eq(matches.id, matchId))
+      .returning({ disagreement_count: matches.disagreement_count })
+
+    if (updated && updated.disagreement_count >= CONFLICT_ALERT_THRESHOLD) {
+      const [match] = await db.select().from(matches).where(eq(matches.id, matchId)).limit(1)
+      if (match) {
+        alertAdminConflict(match, result.snapshots).catch((err) =>
+          console.error(`[reconciliation] falha ao alertar admin para match ${matchId}:`, err)
+        )
+      }
+    }
+
     return { updated: false, locked: false }
   }
 
@@ -188,6 +208,13 @@ export async function applyReconciliation(
           console.log(`[reconciliation] match ${matchId} LOCKED. Recalculated ${recalc.updated} predictions.`)
         } catch (err) {
           console.error(`[reconciliation] match ${matchId} LOCKED, but recalculation FAILED:`, err)
+        }
+        // Verifica se a fase foi concluída e notifica abertura da próxima
+        const [lockedMatch] = await db.select().from(matches).where(eq(matches.id, matchId)).limit(1)
+        if (lockedMatch) {
+          checkAndNotifyPhaseOpen(lockedMatch).catch((err) =>
+            console.error(`[reconciliation] falha ao verificar phase-open para match ${matchId}:`, err)
+          )
         }
       }
     }

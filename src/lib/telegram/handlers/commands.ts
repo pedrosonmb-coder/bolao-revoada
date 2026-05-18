@@ -15,7 +15,7 @@ import {
   inactiveUserMessage,
   helpMessage,
   wrongGroupMessage,
-  type RankingEntry,
+  type BotRankingEntry,
 } from '../messages'
 
 function isGroupChat(ctx: Context): boolean {
@@ -120,7 +120,7 @@ export async function handleRanking(ctx: Context): Promise<void> {
     .orderBy(sql`sum(${predictions.points_awarded}) DESC NULLS LAST`)
     .limit(10)
 
-  const rankings: RankingEntry[] = rows.map((r, i) => ({
+  const rankings: BotRankingEntry[] = rows.map((r, i) => ({
     first_name: r.first_name,
     telegram_username: r.telegram_username,
     total_points: Number(r.total_points ?? 0),

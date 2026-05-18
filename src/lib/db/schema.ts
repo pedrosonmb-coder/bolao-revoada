@@ -37,6 +37,7 @@ export const matches = sqliteTable(
     fd_id: integer('fd_id').unique(),
     // 'group' | 'r32' | 'r16' | 'qf' | 'sf' | '3rd' | 'final'
     stage: text('stage').notNull(),
+    disagreement_count: integer('disagreement_count').notNull().default(0),
     group_name: text('group_name'),
     match_number: integer('match_number'),
     home_team_code: text('home_team_code').notNull(),
@@ -196,9 +197,10 @@ export const botMessages = sqliteTable(
   'bot_messages',
   {
     id: integer('id').primaryKey({ autoIncrement: true }),
-    // 'morning_digest' | 'match_reminder' | 'recap' | 'pre_match' | 'post_match'
+    // 'morning_digest' | 'evening_summary' | 'pre_match_top' | 'pre_match_dm' |
+    // 'post_match_top' | 'phase_open' | 'reconciliation_alert' | 'welcome_group'
     type: text('type').notNull(),
-    // 'group' ou telegram_id do usuário
+    // chave de lock única por notificação, ex: 'morning_digest:2026-06-11', 'pre_match_top:match_42'
     sent_to: text('sent_to').notNull(),
     match_id: integer('match_id').references(() => matches.id),
     payload: text('payload'),
@@ -210,6 +212,8 @@ export const botMessages = sqliteTable(
   (table) => ({
     typeIdx: index('bot_messages_type_idx').on(table.type),
     sentAtIdx: index('bot_messages_sent_at_idx').on(table.sent_at),
+    // Garante idempotência: cada (type, sent_to) só é enviado uma vez
+    uniqueTypeSentTo: uniqueIndex('bot_messages_unique_type_sent_to').on(table.type, table.sent_to),
   })
 )
 
