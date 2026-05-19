@@ -21,8 +21,8 @@ Backups mais antigos que 30 dias são deletados automaticamente pelo workflow.
 Requer Turso CLI instalado e as variáveis de ambiente configuradas:
 
 ```bash
-export TURSO_DATABASE_URL="libsql://..."
-export TURSO_API_TOKEN="..."   # token da plataforma, NÃO o TURSO_AUTH_TOKEN do app
+export TURSO_API_TOKEN="..."        # token da plataforma, NÃO o TURSO_AUTH_TOKEN do app
+export TURSO_DATABASE_NAME="bolao-revoada"  # nome curto, sem libsql:// ou domínio
 
 bash scripts/backup-database.sh
 ```
@@ -68,8 +68,9 @@ Configure em **Settings > Secrets and variables > Actions**:
 | Secret | Status | Descrição |
 |---|---|---|
 | `TURSO_AUTH_TOKEN` | ✅ configurado | Token do SDK libsql — usado **pelo app** em produção |
-| `TURSO_DATABASE_URL` | ✅ configurado | URL do banco (`libsql://...turso.io`) |
+| `TURSO_DATABASE_URL` | ✅ configurado | URL do banco (`libsql://...turso.io`) — usado **pelo app** |
 | `TURSO_API_TOKEN` | ✅ configurado | Token da plataforma Turso — usado **pelo CLI de backup** |
+| `TURSO_DATABASE_NAME` | ✅ configurado | Nome curto do banco (ex: `bolao-revoada`) — usado **pelo CLI de backup** |
 | `GITHUB_TOKEN` | automático | Disponível automaticamente no Actions |
 
 ### Diferença entre os tokens

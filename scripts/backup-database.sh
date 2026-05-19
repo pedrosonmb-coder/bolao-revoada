@@ -2,23 +2,23 @@
 # Backup manual do banco Turso.
 #
 # Uso:
-#   export TURSO_API_TOKEN="seu-api-token"        # token da plataforma (app.turso.tech)
-#   export TURSO_DATABASE_URL="libsql://nome-org.aws-us-east-1.turso.io"
+#   export TURSO_API_TOKEN="seu-api-token"      # token da plataforma (app.turso.tech)
+#   export TURSO_DATABASE_NAME="bolao-revoada"  # só o nome curto, sem libsql:// ou domínio
 #   bash scripts/backup-database.sh
 #
 # O arquivo backup-YYYY-MM-DD.sql.gz é criado no diretório atual.
-# TURSO_API_TOKEN é diferente de TURSO_AUTH_TOKEN (esse é o token do SDK do app).
+# TURSO_API_TOKEN != TURSO_AUTH_TOKEN: o AUTH_TOKEN é do SDK do app, não do CLI.
 
 set -euo pipefail
 
-: "${TURSO_DATABASE_URL:?Erro: TURSO_DATABASE_URL não definido}"
-: "${TURSO_API_TOKEN:?Erro: TURSO_API_TOKEN não definido (diferente de TURSO_AUTH_TOKEN)}"
+: "${TURSO_DATABASE_NAME:?Erro: TURSO_DATABASE_NAME não definido (ex: bolao-revoada)}"
+: "${TURSO_API_TOKEN:?Erro: TURSO_API_TOKEN não definido (token da plataforma, não do SDK)}"
 
 DATE=$(date -u +%Y-%m-%d)
 BACKUP_FILE="backup-${DATE}.sql"
 
-echo "Gerando dump: $TURSO_DATABASE_URL"
-turso db shell "$TURSO_DATABASE_URL" ".dump" > "$BACKUP_FILE"
+echo "Gerando dump: $TURSO_DATABASE_NAME"
+turso db shell "$TURSO_DATABASE_NAME" ".dump" > "$BACKUP_FILE"
 
 if [ ! -s "$BACKUP_FILE" ]; then
   echo "Erro: arquivo de backup vazio — dump pode ter falhado."
