@@ -27,7 +27,7 @@ jobs:
 
       - name: Create database dump
         env:
-          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          TURSO_API_TOKEN: ${{ secrets.TURSO_API_TOKEN }}
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
         run: |
           set -e
@@ -35,7 +35,7 @@ jobs:
           BACKUP_FILE="backup-${DATE}.sql"
 
           echo "Creating dump for: $TURSO_DATABASE_URL"
-          turso db shell "$TURSO_DATABASE_URL" --auth-token "$TURSO_AUTH_TOKEN" ".dump" > "$BACKUP_FILE"
+          turso db shell "$TURSO_DATABASE_URL" ".dump" > "$BACKUP_FILE"
 
           if [ ! -s "$BACKUP_FILE" ]; then
             echo "::error::Backup file is empty — dump may have failed"

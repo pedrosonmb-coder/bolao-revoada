@@ -22,7 +22,7 @@ Requer Turso CLI instalado e as variáveis de ambiente configuradas:
 
 ```bash
 export TURSO_DATABASE_URL="libsql://..."
-export TURSO_AUTH_TOKEN="..."
+export TURSO_API_TOKEN="..."   # token da plataforma, NÃO o TURSO_AUTH_TOKEN do app
 
 bash scripts/backup-database.sh
 ```
@@ -36,7 +36,7 @@ Gera `backup-YYYY-MM-DD.sql.gz` no diretório atual.
 ### Pré-requisitos
 
 - Turso CLI instalado: `curl -sSfL https://get.tur.so/install.sh | bash`
-- Credenciais do banco configuradas
+- `TURSO_API_TOKEN` configurado no ambiente
 
 ### Passos
 
@@ -45,14 +45,11 @@ Gera `backup-YYYY-MM-DD.sql.gz` no diretório atual.
 gunzip backup-2026-06-11.sql.gz
 
 # 2. Aplicar no banco de destino (CUIDADO: sobrescreve dados!)
-turso db shell libsql://seu-banco.turso.io \
-  --auth-token SEU_TOKEN \
-  < backup-2026-06-11.sql
+export TURSO_API_TOKEN="..."
+turso db shell libsql://seu-banco.turso.io < backup-2026-06-11.sql
 
 # 3. Verificar
-turso db shell libsql://seu-banco.turso.io \
-  --auth-token SEU_TOKEN \
-  "SELECT COUNT(*) FROM users;"
+turso db shell libsql://seu-banco.turso.io "SELECT COUNT(*) FROM users;"
 ```
 
 ### Restore em banco local (SQLite)
@@ -66,13 +63,19 @@ sqlite3 local.db < backup-2026-06-11.sql
 
 ## Secrets necessários no GitHub
 
-Para o workflow funcionar, configure em **Settings > Secrets and variables > Actions**:
+Configure em **Settings > Secrets and variables > Actions**:
 
-| Secret | Status | Onde encontrar |
+| Secret | Status | Descrição |
 |---|---|---|
-| `TURSO_AUTH_TOKEN` | ✅ configurado | `turso auth token` ou dashboard Turso |
-| `TURSO_DATABASE_URL` | ✅ configurado | `turso db show bolao-revoada --url` |
+| `TURSO_AUTH_TOKEN` | ✅ configurado | Token do SDK libsql — usado **pelo app** em produção |
+| `TURSO_DATABASE_URL` | ✅ configurado | URL do banco (`libsql://...turso.io`) |
+| `TURSO_API_TOKEN` | ✅ configurado | Token da plataforma Turso — usado **pelo CLI de backup** |
 | `GITHUB_TOKEN` | automático | Disponível automaticamente no Actions |
+
+### Diferença entre os tokens
+
+- **`TURSO_AUTH_TOKEN`**: token de banco de dados, gerado via `turso db tokens create bolao-revoada`. Usado pelo SDK do app (`@libsql/client`) para conectar ao banco. **Não funciona com o CLI.**
+- **`TURSO_API_TOKEN`**: token de plataforma, gerado em **app.turso.tech → Account → API Tokens → Create Token**. Autentica o CLI Turso (`turso db shell`, `turso db list`, etc.). **Não funciona como token do SDK.**
 
 ---
 
