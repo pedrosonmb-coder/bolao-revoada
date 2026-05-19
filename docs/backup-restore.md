@@ -27,7 +27,7 @@ export TURSO_AUTH_TOKEN="..."
 bash scripts/backup-database.sh
 ```
 
-Gera `backup-YYYY-MM-DD_HH-MM.sql.gz` no diretório atual.
+Gera `backup-YYYY-MM-DD.sql.gz` no diretório atual.
 
 ---
 
@@ -66,13 +66,13 @@ sqlite3 local.db < backup-2026-06-11.sql
 
 ## Secrets necessários no GitHub
 
-Para o workflow funcionar, adicione em **Settings > Secrets and variables > Actions**:
+Para o workflow funcionar, configure em **Settings > Secrets and variables > Actions**:
 
-| Secret | Onde encontrar |
-|---|---|
-| `TURSO_AUTH_TOKEN` | `turso auth token` ou dashboard Turso |
-| `TURSO_DATABASE_URL` | `turso db show bolao-revoada --url` |
-| `GITHUB_TOKEN` | Disponível automaticamente no Actions |
+| Secret | Status | Onde encontrar |
+|---|---|---|
+| `TURSO_AUTH_TOKEN` | ✅ configurado | `turso auth token` ou dashboard Turso |
+| `TURSO_DATABASE_URL` | ✅ configurado | `turso db show bolao-revoada --url` |
+| `GITHUB_TOKEN` | automático | Disponível automaticamente no Actions |
 
 ---
 

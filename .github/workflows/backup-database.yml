@@ -2,35 +2,50 @@ name: Backup Database
 
 on:
   schedule:
-    # 06:00 UTC = 03:00 BRT
-    - cron: '0 6 * * *'
+    - cron: '0 6 * * *'  # 06:00 UTC = 03:00 BRT
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   backup:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    timeout-minutes: 10
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Install Turso CLI
-        run: curl -sSfL https://get.tur.so/install.sh | bash
-        env:
-          TURSO_INSTALL_DIR: /usr/local/bin
+        run: |
+          curl -sSfL https://get.tur.so/install.sh | bash
+          echo "$HOME/.turso" >> $GITHUB_PATH
+
+      - name: Verify Turso CLI
+        run: turso --version
 
       - name: Create database dump
-        run: |
-          DATE=$(date +%Y-%m-%d)
-          turso db shell "$TURSO_DATABASE_URL" --auth-token "$TURSO_AUTH_TOKEN" ".dump" > "backup-${DATE}.sql"
-          gzip "backup-${DATE}.sql"
-          echo "BACKUP_FILE=backup-${DATE}.sql.gz" >> "$GITHUB_ENV"
-          echo "BACKUP_DATE=${DATE}" >> "$GITHUB_ENV"
         env:
-          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+        run: |
+          set -e
+          DATE=$(date -u +%Y-%m-%d)
+          BACKUP_FILE="backup-${DATE}.sql"
+
+          echo "Creating dump for: $TURSO_DATABASE_URL"
+          turso db shell "$TURSO_DATABASE_URL" --auth-token "$TURSO_AUTH_TOKEN" ".dump" > "$BACKUP_FILE"
+
+          if [ ! -s "$BACKUP_FILE" ]; then
+            echo "::error::Backup file is empty — dump may have failed"
+            exit 1
+          fi
+
+          gzip "$BACKUP_FILE"
+          echo "BACKUP_FILE=${BACKUP_FILE}.gz" >> $GITHUB_ENV
+          echo "BACKUP_DATE=${DATE}" >> $GITHUB_ENV
+          ls -lh "${BACKUP_FILE}.gz"
 
       - name: Create GitHub Release with backup
         uses: softprops/action-gh-release@v2
@@ -44,21 +59,30 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Delete backups older than 30 days
-        run: |
-          CUTOFF=$(date -d '30 days ago' +%Y-%m-%d)
-          gh release list --limit 100 --json tagName,publishedAt \
-            | jq -r '.[] | select(.tagName | startswith("backup-")) | .tagName' \
-            | while read tag; do
-                DATE="${tag#backup-}"
-                if [[ "$DATE" < "$CUTOFF" ]]; then
-                  echo "Deletando release antiga: $tag"
-                  gh release delete "$tag" --yes --cleanup-tag || true
-                fi
-              done
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Cleanup old releases (keep last 30)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const releases = await github.rest.repos.listReleases({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100
+            });
+
+            const backupReleases = releases.data
+              .filter(r => r.tag_name.startsWith('backup-'))
+              .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+            const toDelete = backupReleases.slice(30);
+            for (const release of toDelete) {
+              await github.rest.repos.deleteRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: release.id
+              });
+              console.log(`Deleted ${release.tag_name}`);
+            }
 
       - name: Notify on failure
         if: failure()
-        run: echo "::error::Backup falhou em $(date). Verifique os logs do workflow."
+        run: echo "::error::Backup falhou em $(date -u). Verifique os logs do workflow."

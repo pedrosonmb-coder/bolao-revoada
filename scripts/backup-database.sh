@@ -1,26 +1,29 @@
 #!/usr/bin/env bash
-# Backup manual do banco Turso. Requer TURSO_DATABASE_URL e TURSO_AUTH_TOKEN no ambiente.
-# Uso: bash scripts/backup-database.sh
+# Backup manual do banco Turso.
+#
+# Uso:
+#   export TURSO_AUTH_TOKEN="seu-token"
+#   export TURSO_DATABASE_URL="libsql://nome-org.aws-us-east-1.turso.io"
+#   bash scripts/backup-database.sh
+#
+# O arquivo backup-YYYY-MM-DD.sql.gz é criado no diretório atual.
 
 set -euo pipefail
 
-if [[ -z "${TURSO_DATABASE_URL:-}" ]]; then
-  echo "Erro: TURSO_DATABASE_URL não definido"
+: "${TURSO_DATABASE_URL:?Erro: TURSO_DATABASE_URL não definido}"
+: "${TURSO_AUTH_TOKEN:?Erro: TURSO_AUTH_TOKEN não definido}"
+
+DATE=$(date -u +%Y-%m-%d)
+BACKUP_FILE="backup-${DATE}.sql"
+
+echo "Gerando dump: $TURSO_DATABASE_URL"
+turso db shell "$TURSO_DATABASE_URL" --auth-token "$TURSO_AUTH_TOKEN" ".dump" > "$BACKUP_FILE"
+
+if [ ! -s "$BACKUP_FILE" ]; then
+  echo "Erro: arquivo de backup vazio — dump pode ter falhado."
+  rm -f "$BACKUP_FILE"
   exit 1
 fi
 
-if [[ -z "${TURSO_AUTH_TOKEN:-}" ]]; then
-  echo "Erro: TURSO_AUTH_TOKEN não definido"
-  exit 1
-fi
-
-DATE=$(date +%Y-%m-%d_%H-%M)
-OUTPUT="backup-${DATE}.sql"
-
-echo "Gerando dump do banco Turso..."
-turso db shell "$TURSO_DATABASE_URL" --auth-token "$TURSO_AUTH_TOKEN" ".dump" > "$OUTPUT"
-
-echo "Compactando..."
-gzip "$OUTPUT"
-
-echo "Backup criado: ${OUTPUT}.gz ($(du -sh "${OUTPUT}.gz" | cut -f1))"
+gzip "$BACKUP_FILE"
+echo "Backup criado: ${BACKUP_FILE}.gz ($(du -sh "${BACKUP_FILE}.gz" | cut -f1))"
