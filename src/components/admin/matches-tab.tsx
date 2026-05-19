@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { adminFetch } from '@/lib/api/admin'
 import { useToast } from '@/components/ui/toast'
 import { getTeamDisplay } from '@/lib/teams'
+import { useRegisterOverlay } from '@/hooks/use-register-overlay'
 import type { Match } from '@/lib/db/schema'
 
 type Props = {
@@ -44,6 +45,7 @@ export function MatchesTab({ matches, telegramId, onRefresh }: Props) {
   const [qtc, setQtc] = useState<'home' | 'away' | ''>('')
   const [reason, setReason] = useState('')
   const [loading, setLoading] = useState(false)
+  useRegisterOverlay(!!overrideModal)
 
   const stages = [...new Set(matches.map((m) => m.stage))]
   const statuses = [...new Set(matches.map((m) => m.status))]
@@ -229,9 +231,10 @@ export function MatchesTab({ matches, telegramId, onRefresh }: Props) {
 
       {/* Modal de override */}
       {overrideModal && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60" onClick={() => setOverrideModal(null)}>
+        <div className="fixed inset-0 z-modal-backdrop flex items-end justify-center bg-black/60" onClick={() => setOverrideModal(null)}>
           <div
             className="bg-(--color-bg-base) rounded-t-2xl w-full max-w-lg p-6 space-y-4"
+            style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="font-[family-name:var(--font-tight)] font-black text-lg uppercase">

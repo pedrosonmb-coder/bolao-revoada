@@ -16,6 +16,15 @@
   /* === Tipografia === */
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-tight: var(--font-inter-tight), ui-sans-serif, system-ui, sans-serif;
+
+  /* === Z-index stack === */
+  --z-dropdown: 10;
+  --z-header: 30;
+  --z-bottom-nav: 50;
+  --z-modal-backdrop: 90;
+  --z-modal: 100;
+  --z-drawer: 100;
+  --z-toast: 200;
 }
 
 /* === Cores — dark mode === */

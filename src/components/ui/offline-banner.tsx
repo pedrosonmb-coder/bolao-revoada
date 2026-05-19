@@ -44,7 +44,7 @@ export function OfflineBanner() {
   if (!isOffline) return null
 
   return (
-    <div className="fixed top-12 left-0 right-0 z-50 bg-(--color-accent-critical) text-white text-center text-xs py-2 px-4">
+    <div className="fixed top-12 left-0 right-0 z-toast bg-(--color-accent-critical) text-white text-center text-xs py-2 px-4">
       Sem conexão. Salvamentos vão tentar quando voltar online.
     </div>
   )

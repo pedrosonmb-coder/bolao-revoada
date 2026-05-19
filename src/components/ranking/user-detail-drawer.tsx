@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react'
 import { X } from 'lucide-react'
 import { useUserDetail } from '@/hooks/use-ranking'
+import { useRegisterOverlay } from '@/hooks/use-register-overlay'
 
 const STAGE_LABEL: Record<string, string> = {
   group: 'Fase de grupos',
@@ -23,6 +24,8 @@ export function UserDetailDrawer({ userId, onClose }: Props) {
   const { data, isLoading } = useUserDetail(userId)
   const overlayRef = useRef<HTMLDivElement>(null)
 
+  useRegisterOverlay(!!userId)
+
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') onClose()
@@ -37,10 +40,13 @@ export function UserDetailDrawer({ userId, onClose }: Props) {
     <>
       <div
         ref={overlayRef}
-        className="fixed inset-0 bg-black/40 z-40"
+        className="fixed inset-0 bg-black/40 z-modal-backdrop"
         onClick={onClose}
       />
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-(--color-bg-base) rounded-t-2xl max-h-[80vh] overflow-y-auto">
+      <div
+        className="fixed bottom-0 left-0 right-0 z-drawer bg-(--color-bg-base) rounded-t-2xl max-h-[80vh] overflow-y-auto"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
         <div className="flex items-center justify-between p-4 border-b border-(--color-border-base)">
           {isLoading || !data ? (
             <div className="h-5 w-32 bg-(--color-bg-surface) rounded animate-pulse" />

@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Home, Target, Trophy, Menu } from 'lucide-react'
+import { useOverlay } from '@/components/providers/overlay-provider'
 
 const tabs = [
   { href: '/', label: 'Início', icon: Home },
@@ -13,10 +14,11 @@ const tabs = [
 
 export function BottomNav() {
   const pathname = usePathname()
+  const { openCount } = useOverlay()
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 bg-(--color-bg-base) border-t border-(--color-border-base)"
+      className={`fixed bottom-0 left-0 right-0 z-bottom-nav bg-(--color-bg-base) border-t border-(--color-border-base) transition-transform duration-200 ${openCount > 0 ? 'translate-y-full' : 'translate-y-0'}`}
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <div className="flex">
