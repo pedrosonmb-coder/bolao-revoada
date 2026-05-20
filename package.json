@@ -9,6 +9,7 @@
     "db:generate": "dotenv -e .env.local -- drizzle-kit generate",
     "db:migrate": "dotenv -e .env.local -- drizzle-kit migrate",
     "db:studio": "dotenv -e .env.local -- drizzle-kit studio",
+    "typecheck": "tsc --noEmit",
     "lint": "next lint",
     "seed:matches": "dotenv -e .env.local -- tsx src/scripts/seed-matches.ts",
     "test:reconcile": "dotenv -e .env.local -- tsx src/scripts/test-reconcile.ts",
@@ -17,7 +18,8 @@
     "fix:chat-id": "dotenv -e .env.local -- tsx src/scripts/fix-chat-id.ts",
     "test": "vitest run",
     "test:scoring": "dotenv -e .env.local -- tsx src/scripts/test-scoring.ts",
-    "test:notifications": "dotenv -e .env.local -- tsx src/scripts/test-notifications.ts"
+    "test:notifications": "dotenv -e .env.local -- tsx src/scripts/test-notifications.ts",
+    "test:weekly-recap": "dotenv -e .env.local -- tsx src/scripts/test-weekly-recap.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.36.0",

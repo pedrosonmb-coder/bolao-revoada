@@ -32,3 +32,4 @@ pnpm-debug.log*
 
 # Turbo
 .turbo/
+tsconfig.tsbuildinfo

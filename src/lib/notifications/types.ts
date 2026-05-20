@@ -7,6 +7,7 @@ export type NotificationType =
   | 'phase_open'
   | 'reconciliation_alert'
   | 'welcome_group'
+  | 'weekly_recap'
 
 export type SendOptions = {
   type: NotificationType
