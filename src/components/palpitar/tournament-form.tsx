@@ -8,9 +8,10 @@ import type { TournamentPrediction } from '@/lib/db/schema'
 
 type TournamentFormProps = {
   existing: TournamentPrediction | null
+  isPaid?: boolean
 }
 
-export function TournamentForm({ existing }: TournamentFormProps) {
+export function TournamentForm({ existing, isPaid = true }: TournamentFormProps) {
   const { toast } = useToast()
   const [form, setForm] = useState<TournamentPredictionPayload>({
     champion_code: existing?.champion_code ?? '',
@@ -82,10 +83,14 @@ export function TournamentForm({ existing }: TournamentFormProps) {
     { key: 'best_young_player_name' as const, label: 'Melhor jovem', pts: 25 },
   ]
 
+  const formDisabled = !isPaid || saving
+
   return (
-    <form onSubmit={handleSubmit} className="px-4 py-4 space-y-4">
+    <form onSubmit={handleSubmit} className={`px-4 py-4 space-y-4 ${!isPaid ? 'opacity-60 pointer-events-none' : ''}`}>
       <p className="text-sm text-(--color-text-secondary)">
-        Palpites pré-Copa. Confirme antes de enviar. Máximo: 325 pts.
+        {isPaid
+          ? 'Palpites pré-Copa. Confirme antes de enviar. Máximo: 325 pts.'
+          : 'Pagamento pendente. Palpites bloqueados até confirmação.'}
       </p>
 
       {/* Campeão */}
@@ -160,8 +165,8 @@ export function TournamentForm({ existing }: TournamentFormProps) {
 
       <button
         type="submit"
-        disabled={saving}
-        className="w-full py-3 rounded-xl bg-(--color-accent-primary) text-white font-medium text-sm disabled:opacity-60 transition-opacity mt-2"
+        disabled={formDisabled}
+        className="w-full py-3 rounded-xl bg-(--color-accent-primary) text-white font-medium text-sm disabled:opacity-60 disabled:cursor-not-allowed transition-opacity mt-2"
       >
         {saving ? 'Salvando...' : 'Salvar palpites de torneio'}
       </button>

@@ -33,7 +33,7 @@ export async function apiFetch<T>(url: string, options?: RequestInit): Promise<T
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: 'Erro desconhecido' }))
-    throw Object.assign(new Error(body.error ?? 'Erro desconhecido'), { status: res.status, body })
+    throw Object.assign(new Error(body.message ?? body.error ?? 'Erro desconhecido'), { status: res.status, body })
   }
 
   return res.json() as Promise<T>

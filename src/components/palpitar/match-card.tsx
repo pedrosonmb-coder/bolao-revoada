@@ -15,6 +15,7 @@ type MatchCardProps = {
   match: Match
   prediction?: MyPrediction
   onSaved?: (matchId: number, homeScore: number, awayScore: number, qtc: string | null) => void
+  isPaid?: boolean
 }
 
 function formatKickoff(date: Date | string): string {
@@ -29,12 +30,12 @@ function formatKickoff(date: Date | string): string {
   }).format(d)
 }
 
-export function MatchCard({ match, prediction, onSaved }: MatchCardProps) {
+export function MatchCard({ match, prediction, onSaved, isPaid = true }: MatchCardProps) {
   const { toast } = useToast()
   const now = new Date()
   const isClosed = now >= new Date(match.predictions_close_at)
   const isLive = match.status === 'live'
-  const disabled = isClosed || isLive
+  const disabled = isClosed || isLive || !isPaid
 
   const [homeScore, setHomeScore] = useState(prediction?.home_score ?? 0)
   const [awayScore, setAwayScore] = useState(prediction?.away_score ?? 0)
@@ -123,7 +124,10 @@ export function MatchCard({ match, prediction, onSaved }: MatchCardProps) {
       </div>
 
       {/* Seletores de placar */}
-      <div className="flex items-center justify-center gap-4">
+      <div
+        className="flex items-center justify-center gap-4"
+        title={!isPaid ? 'Pagamento pendente' : undefined}
+      >
         <ScoreSelector value={homeScore} onChange={handleHomeChange} disabled={disabled} />
         <span className="text-(--color-text-secondary) font-bold">×</span>
         <ScoreSelector value={awayScore} onChange={handleAwayChange} disabled={disabled} />

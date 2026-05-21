@@ -18,9 +18,10 @@ type KnockoutListProps = {
   matches: Match[]
   predictionsMap: Map<number, MyPrediction>
   onSaved?: (matchId: number, hs: number, as_: number, qtc: string | null) => void
+  isPaid: boolean
 }
 
-export function KnockoutList({ matches, predictionsMap, onSaved }: KnockoutListProps) {
+export function KnockoutList({ matches, predictionsMap, onSaved, isPaid }: KnockoutListProps) {
   // Agrupa por stage mantendo ordem
   const stageOrder = ['r32', 'r16', 'qf', 'sf', '3rd', 'final']
   const byStage = new Map<string, Match[]>()
@@ -65,6 +66,7 @@ export function KnockoutList({ matches, predictionsMap, onSaved }: KnockoutListP
                     match={m}
                     prediction={predictionsMap.get(m.id)}
                     onSaved={onSaved}
+                    isPaid={isPaid}
                   />
                 ))}
               </div>

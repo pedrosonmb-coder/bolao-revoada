@@ -20,6 +20,13 @@ export async function POST(req: NextRequest) {
   if (userOrResponse instanceof NextResponse) return userOrResponse
   const user = userOrResponse
 
+  if (!user.paid_at) {
+    return NextResponse.json(
+      { error: 'payment_pending', message: 'Pagamento pendente. Palpites bloqueados até confirmação.' },
+      { status: 403 },
+    )
+  }
+
   if (!user.is_active) {
     return NextResponse.json({ error: 'Conta inativa' }, { status: 403 })
   }

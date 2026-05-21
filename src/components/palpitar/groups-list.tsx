@@ -11,9 +11,10 @@ type GroupsListProps = {
   matches: Match[]
   predictionsMap: Map<number, MyPrediction>
   onSaved?: (matchId: number, hs: number, as_: number, qtc: string | null) => void
+  isPaid: boolean
 }
 
-export function GroupsList({ matches, predictionsMap, onSaved }: GroupsListProps) {
+export function GroupsList({ matches, predictionsMap, onSaved, isPaid }: GroupsListProps) {
   // Agrupa por group_name
   const groups = new Map<string, Match[]>()
   for (const m of matches) {
@@ -49,6 +50,7 @@ export function GroupsList({ matches, predictionsMap, onSaved }: GroupsListProps
             matches={groupMatches}
             predictionsMap={predictionsMap}
             onSaved={onSaved}
+            isPaid={isPaid}
           />
         ))}
       </div>
@@ -61,9 +63,10 @@ type GroupAccordionProps = {
   matches: Match[]
   predictionsMap: Map<number, MyPrediction>
   onSaved?: (matchId: number, hs: number, as_: number, qtc: string | null) => void
+  isPaid: boolean
 }
 
-function GroupAccordion({ groupName, matches, predictionsMap, onSaved }: GroupAccordionProps) {
+function GroupAccordion({ groupName, matches, predictionsMap, onSaved, isPaid }: GroupAccordionProps) {
   const [open, setOpen] = useState(false)
   const done = matches.filter((m) => predictionsMap.has(m.id)).length
 
@@ -94,6 +97,7 @@ function GroupAccordion({ groupName, matches, predictionsMap, onSaved }: GroupAc
               match={m}
               prediction={predictionsMap.get(m.id)}
               onSaved={onSaved}
+              isPaid={isPaid}
             />
           ))}
         </div>

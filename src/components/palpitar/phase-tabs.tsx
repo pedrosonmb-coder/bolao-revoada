@@ -5,6 +5,7 @@ import useSWR from 'swr'
 import { swrFetcher } from '@/lib/api/client'
 import { useMatches } from '@/hooks/use-matches'
 import { useMyPredictions } from '@/hooks/use-my-predictions'
+import { usePaymentStatus } from '@/hooks/use-payment-status'
 import { GroupsList } from './groups-list'
 import { KnockoutList } from './knockout-list'
 import { TournamentForm } from './tournament-form'
@@ -25,6 +26,7 @@ export function PalpitarTabs() {
 
   const { matches: allMatches, isLoading: loadingMatches } = useMatches()
   const { predictionsMap, mutate } = useMyPredictions()
+  const { isPaid } = usePaymentStatus()
   const { data: tournamentData } = useSWR<{ prediction: TournamentPrediction | null }>(
     '/api/tournament-predictions/my',
     swrFetcher
@@ -89,13 +91,14 @@ export function PalpitarTabs() {
       ) : (
         <>
           {activeTab === 'torneio' && (
-            <TournamentForm existing={tournamentData?.prediction ?? null} />
+            <TournamentForm existing={tournamentData?.prediction ?? null} isPaid={isPaid} />
           )}
           {activeTab === 'grupos' && (
             <GroupsList
               matches={groupMatches}
               predictionsMap={predictionsMap}
               onSaved={handleSaved}
+              isPaid={isPaid}
             />
           )}
           {activeTab === 'matamat' && (
@@ -103,6 +106,7 @@ export function PalpitarTabs() {
               matches={knockoutMatches}
               predictionsMap={predictionsMap}
               onSaved={handleSaved}
+              isPaid={isPaid}
             />
           )}
         </>
