@@ -2,16 +2,8 @@
 
 import { useTelegram } from '@/components/providers/telegram-provider'
 import { BackButton } from '@/components/layout/back-button'
-
-function formatDate(d: Date | null | undefined): string {
-  if (!d) return 'Pendente'
-  return new Intl.DateTimeFormat('pt-BR', {
-    timeZone: 'America/Sao_Paulo',
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  }).format(new Date(d))
-}
+import { Skeleton } from '@/components/ui/skeleton'
+import { formatDateOnly } from '@/lib/format'
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
@@ -31,7 +23,7 @@ export default function ContaPage() {
     return (
       <div className="px-4 py-6 space-y-3">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-10 bg-(--color-bg-surface) rounded animate-pulse" />
+          <Skeleton key={i} className="h-10" />
         ))}
       </div>
     )
@@ -50,7 +42,7 @@ export default function ContaPage() {
         <Row label="Nome" value={`${user.first_name}${user.last_name ? ' ' + user.last_name : ''}`} />
         <Row label="ID Telegram" value={String(user.telegram_id)} />
         <Row label="Status" value={user.is_active ? 'Ativo' : 'Inativo'} />
-        <Row label="Pagamento" value={user.paid_at ? `Confirmado em ${formatDate(user.paid_at)}` : 'Pendente'} />
+        <Row label="Pagamento" value={user.paid_at ? `Confirmado em ${formatDateOnly(user.paid_at)}` : 'Pendente'} />
         {user.is_admin && <Row label="Perfil" value="Administrador" />}
       </div>
 

@@ -5,6 +5,8 @@ import { BackButton } from '@/components/layout/back-button'
 import { swrFetcher } from '@/lib/api/client'
 import { getTeamDisplay } from '@/lib/teams'
 import { EmptyState } from '@/components/ui/empty-state'
+import { Skeleton } from '@/components/ui/skeleton'
+import { formatKickoff } from '@/lib/format'
 import type { Match } from '@/lib/db/schema'
 import type { MyPrediction } from '@/hooks/use-my-predictions'
 
@@ -20,17 +22,6 @@ const STAGE_LABELS: Record<string, string> = {
   sf: 'Semifinais',
   '3rd': '3º lugar',
   final: 'Final',
-}
-
-function formatDate(d: Date | null | undefined): string {
-  if (!d) return ''
-  return new Intl.DateTimeFormat('pt-BR', {
-    timeZone: 'America/Sao_Paulo',
-    day: '2-digit',
-    month: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(d))
 }
 
 export default function HistoricoPage() {
@@ -53,7 +44,7 @@ export default function HistoricoPage() {
       {isLoading && (
         <div className="space-y-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-14 bg-(--color-bg-surface) rounded-xl animate-pulse" />
+            <Skeleton key={i} className="h-14 rounded-xl" />
           ))}
         </div>
       )}
@@ -89,7 +80,7 @@ export default function HistoricoPage() {
                 </span>
                 {p.updated_at && (
                   <span className="ml-auto text-xs text-(--color-text-secondary)">
-                    {formatDate(p.updated_at)}
+                    {formatKickoff(p.updated_at)}
                   </span>
                 )}
               </div>

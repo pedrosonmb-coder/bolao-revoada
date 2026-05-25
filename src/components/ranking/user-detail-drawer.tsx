@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react'
 import { X } from 'lucide-react'
 import { useUserDetail } from '@/hooks/use-ranking'
 import { useRegisterOverlay } from '@/hooks/use-register-overlay'
+import { Skeleton } from '@/components/ui/skeleton'
 
 const STAGE_LABEL: Record<string, string> = {
   group: 'Fase de grupos',
@@ -49,7 +50,7 @@ export function UserDetailDrawer({ userId, onClose }: Props) {
       >
         <div className="flex items-center justify-between p-4 border-b border-(--color-border-base)">
           {isLoading || !data ? (
-            <div className="h-5 w-32 bg-(--color-bg-surface) rounded animate-pulse" />
+            <Skeleton className="h-5 w-32" />
           ) : (
             <div className="flex items-center gap-3">
               {data.user.photo_url ? (
@@ -80,7 +81,7 @@ export function UserDetailDrawer({ userId, onClose }: Props) {
         {isLoading || !data ? (
           <div className="p-4 space-y-3">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-14 bg-(--color-bg-surface) rounded-xl animate-pulse" />
+              <Skeleton key={i} className="h-14 rounded-xl" />
             ))}
           </div>
         ) : (

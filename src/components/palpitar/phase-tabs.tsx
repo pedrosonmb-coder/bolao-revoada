@@ -9,6 +9,7 @@ import { usePaymentStatus } from '@/hooks/use-payment-status'
 import { GroupsList } from './groups-list'
 import { KnockoutList } from './knockout-list'
 import { TournamentForm } from './tournament-form'
+import { Skeleton } from '@/components/ui/skeleton'
 import type { TournamentPrediction } from '@/lib/db/schema'
 
 const TABS = [
@@ -85,7 +86,7 @@ export function PalpitarTabs() {
       {loadingMatches ? (
         <div className="px-4 py-6 space-y-3">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-24 bg-(--color-bg-surface) rounded-xl animate-pulse" />
+            <Skeleton key={i} className="h-24 rounded-xl" />
           ))}
         </div>
       ) : (

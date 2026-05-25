@@ -3,6 +3,9 @@
 import { useState } from 'react'
 import { adminFetch } from '@/lib/api/admin'
 import { useToast } from '@/components/ui/toast'
+import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import { formatKickoff } from '@/lib/format'
 
 type SystemStatus = {
   database: { connected: boolean; users_count: number; matches_count: number; predictions_count: number }
@@ -31,13 +34,7 @@ const CRON_LABELS: Record<string, string> = {
 
 function formatTs(ts: number | null): string {
   if (!ts) return 'Nunca'
-  return new Intl.DateTimeFormat('pt-BR', {
-    timeZone: 'America/Sao_Paulo',
-    day: '2-digit',
-    month: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(ts * 1000))
+  return formatKickoff(ts)
 }
 
 export function SystemTab({ status, telegramId, onRefresh }: Props) {
@@ -83,7 +80,7 @@ export function SystemTab({ status, telegramId, onRefresh }: Props) {
     return (
       <div className="space-y-3">
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="h-24 bg-(--color-bg-surface) rounded-xl animate-pulse" />
+          <Skeleton key={i} className="h-24 rounded-xl" />
         ))}
       </div>
     )
@@ -95,7 +92,7 @@ export function SystemTab({ status, telegramId, onRefresh }: Props) {
       <div className="bg-(--color-bg-surface) rounded-xl px-4 py-3 space-y-2">
         <p className="text-xs font-semibold text-(--color-text-secondary) uppercase tracking-wider">Banco de dados</p>
         <div className="flex items-center gap-2">
-          <span className={`w-2 h-2 rounded-full shrink-0 ${status.database.connected ? 'bg-green-500' : 'bg-red-500'}`} />
+          <span className={`w-2 h-2 rounded-full shrink-0 ${status.database.connected ? 'bg-(--color-status-success)' : 'bg-(--color-status-danger)'}`} />
           <span className="text-sm text-(--color-text-primary)">
             {status.database.connected ? 'Conectado' : 'Erro'}
           </span>
@@ -149,22 +146,12 @@ export function SystemTab({ status, telegramId, onRefresh }: Props) {
 
       {/* Ações */}
       <div className="space-y-2">
-        <button
-          type="button"
-          disabled={loading}
-          onClick={doRecalculateAll}
-          className="w-full py-3 rounded-xl bg-(--color-bg-surface) text-(--color-text-primary) text-sm font-medium disabled:opacity-50"
-        >
+        <Button variant="secondary" size="lg" disabled={loading} onClick={doRecalculateAll} className="w-full">
           Recalcular tudo
-        </button>
-        <button
-          type="button"
-          disabled={loading}
-          onClick={doPollFixtures}
-          className="w-full py-3 rounded-xl bg-(--color-bg-surface) text-(--color-text-primary) text-sm font-medium disabled:opacity-50"
-        >
+        </Button>
+        <Button variant="secondary" size="lg" disabled={loading} onClick={doPollFixtures} className="w-full">
           Recarregar fixtures agora
-        </button>
+        </Button>
       </div>
     </div>
   )

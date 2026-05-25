@@ -6,6 +6,7 @@ import { apiFetch } from '@/lib/api/client'
 import { UsersTab } from './users-tab'
 import { MatchesTab } from './matches-tab'
 import { SystemTab } from './system-tab'
+import { Skeleton } from '@/components/ui/skeleton'
 import type { Match } from '@/lib/db/schema'
 
 type Tab = 'users' | 'matches' | 'system'
@@ -87,7 +88,7 @@ export function AdminTabs({ telegramId }: { telegramId: number }) {
       {loading ? (
         <div className="space-y-3">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-16 bg-(--color-bg-surface) rounded-xl animate-pulse" />
+            <Skeleton key={i} className="h-16 rounded-xl" />
           ))}
         </div>
       ) : (

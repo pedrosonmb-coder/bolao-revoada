@@ -5,6 +5,7 @@ import { useTelegram } from '@/components/providers/telegram-provider'
 import { useRanking } from '@/hooks/use-ranking'
 import { UserDetailDrawer } from './user-detail-drawer'
 import { EmptyState } from '@/components/ui/empty-state'
+import { Skeleton } from '@/components/ui/skeleton'
 
 function MedalIcon({ position }: { position: number }) {
   if (position > 3) return null
@@ -35,7 +36,7 @@ function PositionDelta({ current, prev }: { current: number; prev: number | null
   const up = delta > 0
   return (
     <span
-      className={`text-xs font-bold ${up ? 'text-green-500' : 'text-red-500'}`}
+      className={`text-xs font-bold ${up ? 'text-(--color-status-success)' : 'text-(--color-status-danger)'}`}
     >
       {up ? '+' : ''}{delta}
     </span>
@@ -63,7 +64,7 @@ export function RankingScreen() {
       {isLoading ? (
         <div className="space-y-2">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-14 bg-(--color-bg-surface) rounded-xl animate-pulse" />
+            <Skeleton key={i} className="h-14 rounded-xl" />
           ))}
         </div>
       ) : ranking.length === 0 ? (

@@ -3,8 +3,10 @@
 import { useState } from 'react'
 import { adminFetch } from '@/lib/api/admin'
 import { useToast } from '@/components/ui/toast'
+import { Button } from '@/components/ui/button'
 import { getTeamDisplay } from '@/lib/teams'
 import { useRegisterOverlay } from '@/hooks/use-register-overlay'
+import { formatKickoff } from '@/lib/format'
 import type { Match } from '@/lib/db/schema'
 
 type Props = {
@@ -23,15 +25,6 @@ const STAGE_LABELS: Record<string, string> = {
   final: 'Final',
 }
 
-function formatDate(d: Date | string | number): string {
-  return new Intl.DateTimeFormat('pt-BR', {
-    timeZone: 'America/Sao_Paulo',
-    day: '2-digit',
-    month: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(d instanceof Date ? d : typeof d === 'number' ? d * 1000 : d))
-}
 
 type OverrideModal = { match: Match } | null
 
@@ -177,7 +170,7 @@ export function MatchesTab({ matches, telegramId, onRefresh }: Props) {
               </div>
 
               <div className="flex items-center gap-2 text-xs text-(--color-text-secondary)">
-                <span>{formatDate(m.kickoff_at)}</span>
+                <span>{formatKickoff(m.kickoff_at)}</span>
                 <span>·</span>
                 <span>{STAGE_LABELS[m.stage] ?? m.stage}</span>
                 <span>·</span>
@@ -194,34 +187,19 @@ export function MatchesTab({ matches, telegramId, onRefresh }: Props) {
 
               <div className="flex gap-1.5 flex-wrap">
                 {m.status !== 'cancelled' && (
-                  <button
-                    type="button"
-                    disabled={loading}
-                    onClick={() => setOverrideModal({ match: m })}
-                    className="text-xs px-2 py-1 rounded bg-(--color-bg-base) text-(--color-text-secondary) disabled:opacity-50"
-                  >
+                  <Button variant="secondary" size="sm" disabled={loading} onClick={() => setOverrideModal({ match: m })}>
                     Forçar resultado
-                  </button>
+                  </Button>
                 )}
                 {m.status !== 'cancelled' && m.status !== 'finished' && (
-                  <button
-                    type="button"
-                    disabled={loading}
-                    onClick={() => doCancel(m)}
-                    className="text-xs px-2 py-1 rounded bg-(--color-accent-critical)/20 text-(--color-accent-critical) disabled:opacity-50"
-                  >
+                  <Button variant="danger" size="sm" disabled={loading} onClick={() => doCancel(m)}>
                     W.O.
-                  </button>
+                  </Button>
                 )}
                 {m.status === 'finished' && (
-                  <button
-                    type="button"
-                    disabled={loading}
-                    onClick={() => doRecalculate(m)}
-                    className="text-xs px-2 py-1 rounded bg-(--color-bg-base) text-(--color-text-secondary) disabled:opacity-50"
-                  >
+                  <Button variant="ghost" size="sm" disabled={loading} onClick={() => doRecalculate(m)}>
                     Recalcular
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
@@ -293,21 +271,12 @@ export function MatchesTab({ matches, telegramId, onRefresh }: Props) {
             />
 
             <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setOverrideModal(null)}
-                className="flex-1 py-2 rounded-lg bg-(--color-bg-surface) text-(--color-text-secondary) text-sm"
-              >
+              <Button variant="secondary" size="md" className="flex-1" onClick={() => setOverrideModal(null)}>
                 Cancelar
-              </button>
-              <button
-                type="button"
-                disabled={loading}
-                onClick={() => doOverride(overrideModal.match)}
-                className="flex-1 py-2 rounded-lg bg-(--color-accent-primary) text-white text-sm font-medium disabled:opacity-50"
-              >
+              </Button>
+              <Button variant="confirm" size="md" className="flex-1" disabled={loading} onClick={() => doOverride(overrideModal.match)}>
                 Confirmar
-              </button>
+              </Button>
             </div>
           </div>
         </div>

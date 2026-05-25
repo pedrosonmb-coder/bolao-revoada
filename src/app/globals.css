@@ -13,6 +13,26 @@
   --color-accent-primary: #0A2D82;
   --color-accent-critical: #E10600;
 
+  /* === Status semânticos === */
+  --color-status-success: #16A34A;
+  --color-status-success-bg: #DCFCE7;
+  --color-status-warning: #CA8A04;
+  --color-status-warning-bg: #FEF3C7;
+  --color-status-danger: #DC2626;
+  --color-status-danger-bg: #FEE2E2;
+  --color-status-info: #2563EB;
+  --color-status-info-bg: #DBEAFE;
+
+  /* === Border-radius === */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.5rem;
+
+  /* === Sombras === */
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
+
   /* === Tipografia === */
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-tight: var(--font-inter-tight), ui-sans-serif, system-ui, sans-serif;
@@ -36,6 +56,17 @@
   --color-text-secondary: #A3A3A3;
   --color-accent-primary: #3D5FBF;
   --color-accent-critical: #FF1F1F;
+
+  --color-status-success: #4ADE80;
+  --color-status-success-bg: #064E3B;
+  --color-status-warning: #FACC15;
+  --color-status-warning-bg: #422006;
+  --color-status-danger: #F87171;
+  --color-status-danger-bg: #450A0A;
+  --color-status-info: #60A5FA;
+  --color-status-info-bg: #1E3A8A;
+
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
 }
 
 /* === Reset de base === */

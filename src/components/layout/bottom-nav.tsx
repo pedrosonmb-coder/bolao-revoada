@@ -2,13 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Target, Trophy, Menu } from 'lucide-react'
+import { Home, Target, Trophy, Gift, Menu } from 'lucide-react'
 import { useOverlay } from '@/components/providers/overlay-provider'
 
 const tabs = [
   { href: '/', label: 'Início', icon: Home },
   { href: '/palpitar', label: 'Palpitar', icon: Target },
   { href: '/ranking', label: 'Ranking', icon: Trophy },
+  { href: '/premio', label: 'Prêmio', icon: Gift },
   { href: '/mais', label: 'Mais', icon: Menu },
 ]
 
