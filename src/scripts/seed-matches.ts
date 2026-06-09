@@ -181,9 +181,9 @@ async function main() {
   windows.push({ stage: 'group', opens_at: groupOpens, closes_at: minus5m(minGroup), multiplier: 1.0 })
   windows.push({ stage: 'r32', opens_at: maxGroup, closes_at: minus5m(minR32), multiplier: 1.5 })
   windows.push({ stage: 'r16', opens_at: maxR32, closes_at: minus5m(minR16), multiplier: 2.0 })
-  windows.push({ stage: 'qf', opens_at: maxR16, closes_at: minus5m(minQf), multiplier: 2.5 })
-  windows.push({ stage: 'sf', opens_at: maxQf, closes_at: minus5m(minSf), multiplier: 3.0 })
-  windows.push({ stage: 'final', opens_at: maxSf, closes_at: minus5m(minThird), multiplier: 4.0 })
+  windows.push({ stage: 'qf', opens_at: maxR16, closes_at: minus5m(minQf), multiplier: 2.0 })
+  windows.push({ stage: 'sf', opens_at: maxQf, closes_at: minus5m(minSf), multiplier: 2.0 })
+  windows.push({ stage: 'final', opens_at: maxSf, closes_at: minus5m(minThird), multiplier: 2.5 })
 
   for (const w of windows) {
     await db
