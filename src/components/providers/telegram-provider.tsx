@@ -9,6 +9,7 @@ type AppUser = {
   telegram_id: number
   first_name: string
   last_name?: string | null
+  display_name?: string | null
   photo_url?: string | null
   is_admin: boolean
   is_active: boolean

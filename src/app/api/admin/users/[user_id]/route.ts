@@ -8,6 +8,7 @@ import { z } from 'zod'
 const bodySchema = z.object({
   is_active: z.boolean().optional(),
   paid_at: z.number().nullable().optional(),
+  display_name: z.string().nullable().optional(),
 })
 
 export async function PATCH(
@@ -31,11 +32,13 @@ export async function PATCH(
   const parsed = bodySchema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
 
-  const { is_active, paid_at } = parsed.data
+  const { is_active, paid_at, display_name } = parsed.data
 
   const updates: Record<string, unknown> = { updated_at: new Date() }
   if (is_active !== undefined) updates.is_active = is_active
   if (paid_at !== undefined) updates.paid_at = paid_at === null ? null : new Date(paid_at * 1000)
+  // Empty string → null (clear override, fall back to Telegram name)
+  if (display_name !== undefined) updates.display_name = display_name?.trim() || null
 
   if (Object.keys(updates).length === 1) {
     return NextResponse.json({ error: 'Nenhum campo para atualizar' }, { status: 400 })

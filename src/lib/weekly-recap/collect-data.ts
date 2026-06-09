@@ -2,25 +2,24 @@ import { db } from '@/lib/db'
 import { matches, predictions, users } from '@/lib/db/schema'
 import { and, eq, gte, lte, isNotNull } from 'drizzle-orm'
 import { getRanking } from '@/lib/scoring/ranking'
+import { getDisplayName } from '@/lib/display-name'
 import type { RecapWindow } from './window'
 
 export type UserSummary = {
   user_id: number
-  first_name: string
-  last_name: string | null
+  name: string
 }
 
 export type PositionEntry = {
   user_id: number
-  first_name: string
-  last_name: string | null
+  name: string
   position: number
   total_points: number
 }
 
 export type MoverEntry = {
   user_id: number
-  first_name: string
+  name: string
   positionBefore: number
   positionAfter: number
   delta: number // positivo = subiu, negativo = caiu
@@ -39,7 +38,7 @@ export type FinishedMatch = {
 
 export type GuessHighlight = {
   user_id: number
-  first_name: string
+  name: string
   match: {
     home_team_name: string
     away_team_name: string
@@ -52,7 +51,7 @@ export type GuessHighlight = {
 
 export type WorstGuess = {
   user_id: number
-  first_name: string
+  name: string
   match: {
     home_team_name: string
     away_team_name: string
@@ -132,16 +131,14 @@ export async function collectWeeklyRecapData(
 
   const allUsers: UserSummary[] = activeUsers.map((u) => ({
     user_id: u.id,
-    first_name: u.first_name,
-    last_name: u.last_name,
+    name: getDisplayName(u),
   }))
 
   // Ranking atual (after)
   const currentRanking = await getRanking()
   const rankingAfter: PositionEntry[] = currentRanking.map((e) => ({
     user_id: e.user_id,
-    first_name: e.first_name,
-    last_name: e.last_name,
+    name: e.name,
     position: e.position,
     total_points: e.total_points,
   }))
@@ -152,8 +149,7 @@ export async function collectWeeklyRecapData(
     .filter((u) => u.previous_position != null)
     .map((u) => ({
       user_id: u.id,
-      first_name: u.first_name,
-      last_name: u.last_name,
+      name: getDisplayName(u),
       position: u.previous_position!,
       total_points: positionAfterByUser.get(u.id)?.total_points ?? 0,
     }))
@@ -167,7 +163,7 @@ export async function collectWeeklyRecapData(
       if (!after) return null
       return {
         user_id: u.id,
-        first_name: u.first_name,
+        name: getDisplayName(u),
         positionBefore: u.previous_position!,
         positionAfter: after.position,
         delta: u.previous_position! - after.position, // positivo = subiu
@@ -209,7 +205,7 @@ export async function collectWeeklyRecapData(
       if (match && user) {
         bestGuess = {
           user_id: pred.user_id,
-          first_name: user.first_name,
+          name: getDisplayName(user),
           match: {
             home_team_name: match.home_team_name,
             away_team_name: match.away_team_name,
@@ -241,7 +237,7 @@ export async function collectWeeklyRecapData(
       worstDiff = diff
       worstGuess = {
         user_id: pred.user_id,
-        first_name: user.first_name,
+        name: getDisplayName(user),
         match: {
           home_team_name: match.home_team_name,
           away_team_name: match.away_team_name,

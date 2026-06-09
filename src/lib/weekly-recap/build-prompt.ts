@@ -27,8 +27,8 @@ function formatDateBrt(date: Date): string {
   return `${day}/${month}`
 }
 
-function displayName(first: string, last: string | null): string {
-  return last ? `${first} ${last}` : first
+function displayName(name: string): string {
+  return name
 }
 
 export function buildRecapPrompt(data: WeeklyRecapData): { system: string; user: string } {
@@ -52,7 +52,7 @@ abertura com o que rolou na semana, destaques do ranking, melhor/pior palpite, p
 
   // Participantes
   lines.push('### Participantes')
-  lines.push(data.allUsers.map((u) => displayName(u.first_name, u.last_name)).join(', '))
+  lines.push(data.allUsers.map((u) => displayName(u.name)).join(', '))
   lines.push('')
 
   // Jogos finalizados
@@ -69,14 +69,14 @@ abertura com o que rolou na semana, destaques do ranking, melhor/pior palpite, p
   if (data.rankingBefore.length > 0) {
     lines.push('### Ranking antes da semana')
     for (const e of data.rankingBefore) {
-      lines.push(`${e.position}. ${displayName(e.first_name, e.last_name)}`)
+      lines.push(`${e.position}. ${displayName(e.name)}`)
     }
     lines.push('')
   }
 
   lines.push('### Ranking atual')
   for (const e of data.rankingAfter) {
-    lines.push(`${e.position}. ${displayName(e.first_name, e.last_name)} — ${e.total_points} pts`)
+    lines.push(`${e.position}. ${displayName(e.name)} — ${e.total_points} pts`)
   }
   lines.push('')
 
@@ -84,13 +84,13 @@ abertura com o que rolou na semana, destaques do ranking, melhor/pior palpite, p
   if (data.biggestClimber) {
     const c = data.biggestClimber
     lines.push(
-      `### Maior subida: ${c.first_name} (${c.positionBefore}º → ${c.positionAfter}º, +${c.delta} posições)`,
+      `### Maior subida: ${c.name} (${c.positionBefore}º → ${c.positionAfter}º, +${c.delta} posições)`,
     )
   }
   if (data.biggestFaller) {
     const f = data.biggestFaller
     lines.push(
-      `### Maior queda: ${f.first_name} (${f.positionBefore}º → ${f.positionAfter}º, ${f.delta} posições)`,
+      `### Maior queda: ${f.name} (${f.positionBefore}º → ${f.positionAfter}º, ${f.delta} posições)`,
     )
   }
   if (data.biggestClimber || data.biggestFaller) lines.push('')
@@ -100,7 +100,7 @@ abertura com o que rolou na semana, destaques do ranking, melhor/pior palpite, p
     const b = data.bestGuess
     lines.push(`### Melhor palpite da semana`)
     lines.push(
-      `${b.first_name}: chutou ${b.predicted.home_score}x${b.predicted.away_score} em ${b.match.home_team_name} x ${b.match.away_team_name} (real: ${b.match.home_score}x${b.match.away_score}) — ${b.points} pts`,
+      `${b.name}: chutou ${b.predicted.home_score}x${b.predicted.away_score} em ${b.match.home_team_name} x ${b.match.away_team_name} (real: ${b.match.home_score}x${b.match.away_score}) — ${b.points} pts`,
     )
     lines.push('')
   }
@@ -109,7 +109,7 @@ abertura com o que rolou na semana, destaques do ranking, melhor/pior palpite, p
     const w = data.worstGuess
     lines.push(`### Palpite mais errado (0 pts)`)
     lines.push(
-      `${w.first_name}: chutou ${w.predicted.home_score}x${w.predicted.away_score} em ${w.match.home_team_name} x ${w.match.away_team_name} (real: ${w.match.home_score}x${w.match.away_score}) — diferença de ${w.diff} gols`,
+      `${w.name}: chutou ${w.predicted.home_score}x${w.predicted.away_score} em ${w.match.home_team_name} x ${w.match.away_team_name} (real: ${w.match.home_score}x${w.match.away_score}) — diferença de ${w.diff} gols`,
     )
     lines.push('')
   }

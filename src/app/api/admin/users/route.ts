@@ -31,6 +31,7 @@ export async function GET(req: NextRequest) {
     return {
       user_id: u.id,
       telegram_id: u.telegram_id,
+      display_name: u.display_name ?? null,
       first_name: u.first_name,
       last_name: u.last_name,
       photo_url: u.photo_url,

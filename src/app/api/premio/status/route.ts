@@ -3,6 +3,7 @@ import { requireUser } from '@/lib/server/auth'
 import { db } from '@/lib/db'
 import { users } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
+import { getDisplayName } from '@/lib/display-name'
 
 const ENTRY_FEE = 100
 
@@ -13,7 +14,9 @@ export async function GET(req: NextRequest) {
   const allUsers = await db
     .select({
       id: users.id,
+      display_name: users.display_name,
       first_name: users.first_name,
+      last_name: users.last_name,
       paid_at: users.paid_at,
       is_active: users.is_active,
     })
@@ -35,11 +38,11 @@ export async function GET(req: NextRequest) {
 
   const participants = [
     ...paid
-      .sort((a, b) => a.first_name.localeCompare(b.first_name, 'pt-BR'))
-      .map((u) => ({ id: u.id, first_name: u.first_name, is_paid: true })),
+      .sort((a, b) => getDisplayName(a).localeCompare(getDisplayName(b), 'pt-BR'))
+      .map((u) => ({ id: u.id, name: getDisplayName(u), is_paid: true })),
     ...pending
-      .sort((a, b) => a.first_name.localeCompare(b.first_name, 'pt-BR'))
-      .map((u) => ({ id: u.id, first_name: u.first_name, is_paid: false })),
+      .sort((a, b) => getDisplayName(a).localeCompare(getDisplayName(b), 'pt-BR'))
+      .map((u) => ({ id: u.id, name: getDisplayName(u), is_paid: false })),
   ]
 
   return NextResponse.json({

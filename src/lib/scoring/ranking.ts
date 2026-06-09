@@ -1,12 +1,12 @@
 import { db } from '@/lib/db'
 import { users, predictions, tournamentPredictions } from '@/lib/db/schema'
 import { eq, isNotNull, and } from 'drizzle-orm'
+import { getDisplayName } from '@/lib/display-name'
 
 export type RankingEntry = {
   user_id: number
   telegram_id: number
-  first_name: string
-  last_name: string | null
+  name: string
   photo_url: string | null
   total_points: number
   match_points: number
@@ -61,8 +61,7 @@ export async function getRanking(): Promise<RankingEntry[]> {
     return {
       user_id: u.id,
       telegram_id: u.telegram_id,
-      first_name: u.first_name,
-      last_name: u.last_name,
+      name: getDisplayName(u),
       photo_url: u.photo_url,
       total_points,
       match_points,
@@ -107,7 +106,7 @@ export async function getRanking(): Promise<RankingEntry[]> {
 }
 
 export type UserDetail = {
-  user: { first_name: string; last_name: string | null; photo_url: string | null; telegram_id: number }
+  user: { name: string; photo_url: string | null; telegram_id: number }
   totals: { total_points: number; match_points: number; tournament_points: number; position: number }
   by_stage: { stage: string; points: number; matches_played: number; accuracy: number }[]
   achievements: { exact_scores: number; winners_correct: number }
@@ -158,8 +157,7 @@ export async function getUserDetail(userId: number): Promise<UserDetail | null> 
 
   return {
     user: {
-      first_name: user.first_name,
-      last_name: user.last_name,
+      name: getDisplayName(user),
       photo_url: user.photo_url,
       telegram_id: user.telegram_id,
     },

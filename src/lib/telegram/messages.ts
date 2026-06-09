@@ -217,7 +217,7 @@ export function postMatchTopMessage(match: Match, topN: RankingEntry[]): string 
     lines.push('')
     lines.push('Top do ranking:')
     for (const e of topN) {
-      lines.push(`${e.position}. ${e.first_name} — ${e.total_points} pts`)
+      lines.push(`${e.position}. ${e.name} — ${e.total_points} pts`)
     }
   }
 
@@ -238,7 +238,7 @@ export function eveningSummaryMessage(finishedMatches: Match[], topN: RankingEnt
     lines.push('')
     lines.push('Top 3:')
     for (const e of topN) {
-      lines.push(`${e.position}. ${e.first_name} — ${e.total_points} pts`)
+      lines.push(`${e.position}. ${e.name} — ${e.total_points} pts`)
     }
   }
 

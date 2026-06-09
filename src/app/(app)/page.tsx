@@ -4,6 +4,7 @@ import useSWR from 'swr'
 import { swrFetcher } from '@/lib/api/client'
 import { useTelegram } from '@/components/providers/telegram-provider'
 import { useRanking } from '@/hooks/use-ranking'
+import { getDisplayName } from '@/lib/display-name'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -60,7 +61,7 @@ export default function HomePage() {
           )}
           <div className="min-w-0 flex-1">
             <p className="font-[family-name:var(--font-tight)] font-bold text-(--color-text-primary) truncate">
-              {user?.first_name} {user?.last_name}
+              {user ? getDisplayName(user) : ''}
             </p>
             <p className="text-(--color-text-secondary) text-sm">
               {myRankingEntry

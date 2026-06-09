@@ -93,10 +93,10 @@ export default function PremioPage() {
             {data.participants.map((p) => (
               <div key={p.id} className="flex items-center gap-3 px-4 py-3">
                 <div className="w-8 h-8 rounded-full bg-(--color-bg-base) border border-(--color-border-base) flex items-center justify-center text-sm font-bold text-(--color-text-primary) shrink-0">
-                  {p.first_name[0]}
+                  {p.name[0]}
                 </div>
                 <span className="flex-1 text-sm font-medium text-(--color-text-primary)">
-                  {p.first_name}
+                  {p.name}
                 </span>
                 <Badge variant={p.is_paid ? 'success' : 'warning'}>
                   {p.is_paid ? 'Pago' : 'Pendente'}

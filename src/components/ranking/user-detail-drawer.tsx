@@ -56,16 +56,16 @@ export function UserDetailDrawer({ userId, onClose }: Props) {
               {data.user.photo_url ? (
                 <img
                   src={data.user.photo_url}
-                  alt={data.user.first_name}
+                  alt={data.user.name}
                   className="w-9 h-9 rounded-full object-cover"
                 />
               ) : (
                 <div className="w-9 h-9 rounded-full bg-(--color-bg-surface) flex items-center justify-center font-bold text-sm text-(--color-text-primary)">
-                  {data.user.first_name[0]}
+                  {data.user.name[0]}
                 </div>
               )}
               <span className="font-semibold text-(--color-text-primary)">
-                {data.user.first_name} {data.user.last_name}
+                {data.user.name}
               </span>
             </div>
           )}

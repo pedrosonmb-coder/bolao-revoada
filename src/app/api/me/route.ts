@@ -26,6 +26,7 @@ export async function GET(req: NextRequest) {
         telegram_id: user.telegram_id,
         first_name: user.first_name,
         last_name: user.last_name,
+        display_name: user.display_name ?? null,
         photo_url: user.photo_url,
         is_admin: user.is_admin,
         is_active: user.is_active,

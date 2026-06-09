@@ -103,7 +103,7 @@ export function RankingScreen() {
                 {entry.photo_url ? (
                   <img
                     src={entry.photo_url}
-                    alt={entry.first_name}
+                    alt={entry.name}
                     className="w-9 h-9 rounded-full object-cover"
                   />
                 ) : (
@@ -114,7 +114,7 @@ export function RankingScreen() {
                         : 'bg-(--color-bg-base) text-(--color-text-primary)'
                     }`}
                   >
-                    {entry.first_name[0]}
+                    {entry.name[0]}
                   </div>
                 )}
 
@@ -123,7 +123,7 @@ export function RankingScreen() {
                     isMe ? 'text-white' : 'text-(--color-text-primary)'
                   }`}
                 >
-                  {entry.first_name} {entry.last_name}
+                  {entry.name}
                 </span>
 
                 <PositionDelta current={entry.position} prev={entry.prev_position} />
