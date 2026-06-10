@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { adminFetch } from '@/lib/api/admin'
 import { useToast } from '@/components/ui/toast'
 import { Button } from '@/components/ui/button'
-import { getTeamDisplay } from '@/lib/teams'
+import { getTeamDisplay, getAllTeams } from '@/lib/teams'
+import { isMatchTbd } from '@/lib/poll-fixtures/team-sync'
 import { useRegisterOverlay } from '@/hooks/use-register-overlay'
 import { formatKickoff } from '@/lib/format'
 import type { Match } from '@/lib/db/schema'
@@ -27,6 +28,9 @@ const STAGE_LABELS: Record<string, string> = {
 
 
 type OverrideModal = { match: Match } | null
+type DefineTeamsModal = { match: Match } | null
+
+const allTeams = getAllTeams()
 
 export function MatchesTab({ matches, telegramId, onRefresh }: Props) {
   const { toast } = useToast()
@@ -37,8 +41,11 @@ export function MatchesTab({ matches, telegramId, onRefresh }: Props) {
   const [awayScore, setAwayScore] = useState('')
   const [qtc, setQtc] = useState<'home' | 'away' | ''>('')
   const [reason, setReason] = useState('')
+  const [defineTeamsModal, setDefineTeamsModal] = useState<DefineTeamsModal>(null)
+  const [homeTeamCode, setHomeTeamCode] = useState('')
+  const [awayTeamCode, setAwayTeamCode] = useState('')
   const [loading, setLoading] = useState(false)
-  useRegisterOverlay(!!overrideModal)
+  useRegisterOverlay(!!overrideModal || !!defineTeamsModal)
 
   const stages = [...new Set(matches.map((m) => m.stage))]
   const statuses = [...new Set(matches.map((m) => m.status))]
@@ -121,6 +128,27 @@ export function MatchesTab({ matches, telegramId, onRefresh }: Props) {
     }
   }
 
+  async function doDefineTeams(match: Match) {
+    if (!homeTeamCode || !awayTeamCode) return toast('Selecione os dois times', 'error')
+    if (homeTeamCode === awayTeamCode) return toast('Os times não podem ser iguais', 'error')
+    setLoading(true)
+    try {
+      await adminFetch(`/api/admin/matches/${match.id}/define-teams`, telegramId, {
+        method: 'PATCH',
+        body: JSON.stringify({ home_team_code: homeTeamCode, away_team_code: awayTeamCode }),
+      })
+      toast('Times definidos')
+      setDefineTeamsModal(null)
+      setHomeTeamCode('')
+      setAwayTeamCode('')
+      onRefresh()
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Erro', 'error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex gap-2 flex-wrap">
@@ -158,13 +186,18 @@ export function MatchesTab({ matches, telegramId, onRefresh }: Props) {
               key={m.id}
               className="bg-(--color-bg-surface) rounded-xl px-4 py-3 space-y-2"
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-sm font-medium text-(--color-text-primary)">
                   {home.flag} {home.name} vs {away.name} {away.flag}
                 </span>
                 {isOverridden && (
                   <span className="text-xs px-1.5 py-0.5 rounded bg-(--color-accent-critical)/20 text-(--color-accent-critical) shrink-0">
                     Admin
+                  </span>
+                )}
+                {isMatchTbd(m) && m.stage !== 'group' && (
+                  <span className="text-xs px-1.5 py-0.5 rounded bg-(--color-accent-warning)/20 text-(--color-accent-warning) shrink-0">
+                    A definir
                   </span>
                 )}
               </div>
@@ -186,6 +219,11 @@ export function MatchesTab({ matches, telegramId, onRefresh }: Props) {
               </div>
 
               <div className="flex gap-1.5 flex-wrap">
+                {m.stage !== 'group' && isMatchTbd(m) && m.status !== 'cancelled' && (
+                  <Button variant="secondary" size="sm" disabled={loading} onClick={() => { setDefineTeamsModal({ match: m }); setHomeTeamCode(''); setAwayTeamCode('') }}>
+                    Definir times
+                  </Button>
+                )}
                 {m.status !== 'cancelled' && (
                   <Button variant="secondary" size="sm" disabled={loading} onClick={() => setOverrideModal({ match: m })}>
                     Forçar resultado
@@ -206,6 +244,62 @@ export function MatchesTab({ matches, telegramId, onRefresh }: Props) {
           )
         })}
       </div>
+
+      {/* Modal de definir times (mata-mata TBD) */}
+      {defineTeamsModal && (
+        <div className="fixed inset-0 z-modal-backdrop flex items-end justify-center bg-black/60" onClick={() => setDefineTeamsModal(null)}>
+          <div
+            className="bg-(--color-bg-base) rounded-t-2xl w-full max-w-lg p-6 space-y-4"
+            style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="font-[family-name:var(--font-tight)] font-black text-lg uppercase">
+              Definir times
+            </h2>
+            <p className="text-sm text-(--color-text-secondary)">
+              {STAGE_LABELS[defineTeamsModal.match.stage] ?? defineTeamsModal.match.stage} · {formatKickoff(defineTeamsModal.match.kickoff_at)}
+            </p>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-(--color-text-secondary) block mb-1">Time da casa</label>
+                <select
+                  value={homeTeamCode}
+                  onChange={(e) => setHomeTeamCode(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg bg-(--color-bg-surface) text-(--color-text-primary) border border-(--color-border-base)"
+                >
+                  <option value="">Selecionar time...</option>
+                  {allTeams.map((t) => (
+                    <option key={t.tla} value={t.tla}>{t.flag} {t.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-(--color-text-secondary) block mb-1">Time visitante</label>
+                <select
+                  value={awayTeamCode}
+                  onChange={(e) => setAwayTeamCode(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg bg-(--color-bg-surface) text-(--color-text-primary) border border-(--color-border-base)"
+                >
+                  <option value="">Selecionar time...</option>
+                  {allTeams.map((t) => (
+                    <option key={t.tla} value={t.tla}>{t.flag} {t.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <Button variant="secondary" size="md" className="flex-1" onClick={() => setDefineTeamsModal(null)}>
+                Cancelar
+              </Button>
+              <Button variant="confirm" size="md" className="flex-1" disabled={loading || !homeTeamCode || !awayTeamCode} onClick={() => doDefineTeams(defineTeamsModal.match)}>
+                Confirmar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal de override */}
       {overrideModal && (

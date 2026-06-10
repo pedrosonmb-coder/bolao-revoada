@@ -76,3 +76,17 @@ export function getTeamDisplay(tla: string): { name: string; flag: string } {
   const flag = SPECIAL_FLAGS[key] ?? computeFlag(team.iso2)
   return { name: team.name, flag }
 }
+
+export function getTeamName(tla: string): string | null {
+  return TEAMS[tla.toUpperCase()]?.name ?? null
+}
+
+export function getAllTeams(): { tla: string; name: string; flag: string }[] {
+  return Object.entries(TEAMS)
+    .map(([tla, info]) => ({
+      tla,
+      name: info.name,
+      flag: SPECIAL_FLAGS[tla] ?? computeFlag(info.iso2),
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
+}
