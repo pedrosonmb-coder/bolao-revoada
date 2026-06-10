@@ -4,6 +4,10 @@ import { matches, pollingLogs } from '@/lib/db/schema'
 import { ne, eq } from 'drizzle-orm'
 import { fetchAllMatchesFromFootballData } from '@/lib/data-sources/football-data'
 import { verifyCronAuth } from '@/lib/cron-auth'
+import { computeTeamCodeChanges, type NewlyDefinedMatch } from '@/lib/poll-fixtures/team-sync'
+import { sendNotification } from '@/lib/notifications/send'
+import { bracketDefinedMessage } from '@/lib/telegram/messages'
+import { env } from '@/lib/env'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -38,6 +42,7 @@ export async function GET(req: NextRequest) {
   let updated = 0
   let postponed = 0
   let cancelled = 0
+  const newlyDefinedMatches: NewlyDefinedMatch[] = []
   let error: string | undefined
 
   try {
@@ -78,6 +83,7 @@ export async function GET(req: NextRequest) {
 
           const changes: Record<string, unknown> = {}
 
+          // Kickoff sync
           const currentKickoff =
             match.kickoff_at instanceof Date
               ? match.kickoff_at.getTime()
@@ -96,6 +102,7 @@ export async function GET(req: NextRequest) {
             }
           }
 
+          // Status sync
           const mappedStatus = mapApiStatus((apiMatch.status as string) ?? '')
           if (mappedStatus === 'postponed' && match.status !== 'postponed') {
             changes.status = 'postponed'
@@ -107,6 +114,56 @@ export async function GET(req: NextRequest) {
             console.log(`[poll-fixtures] Match ${match.id} cancelado`)
           }
 
+          // Team code sync — Fase A
+          // NUNCA sobrescreve time real com null/TBD; atualiza apenas quando API traz valor não-vazio
+          const apiHome = (apiMatch.homeTeam as { tla?: string; name?: string } | undefined) ?? {}
+          const apiAway = (apiMatch.awayTeam as { tla?: string; name?: string } | undefined) ?? {}
+
+          const {
+            changes: teamChanges,
+            newlyBothDefined,
+            effectiveHomeCode,
+            effectiveHomeName,
+            effectiveAwayCode,
+            effectiveAwayName,
+          } = computeTeamCodeChanges(match, apiHome, apiAway)
+
+          if (teamChanges.home_team_code) {
+            console.log(
+              JSON.stringify({
+                event: 'bracket_team_defined',
+                match_id: match.id,
+                side: 'home',
+                tla: teamChanges.home_team_code,
+                name: teamChanges.home_team_name ?? match.home_team_name,
+              })
+            )
+          }
+          if (teamChanges.away_team_code) {
+            console.log(
+              JSON.stringify({
+                event: 'bracket_team_defined',
+                match_id: match.id,
+                side: 'away',
+                tla: teamChanges.away_team_code,
+                name: teamChanges.away_team_name ?? match.away_team_name,
+              })
+            )
+          }
+
+          Object.assign(changes, teamChanges)
+
+          if (newlyBothDefined) {
+            newlyDefinedMatches.push({
+              id: match.id,
+              stage: match.stage,
+              home_team_code: effectiveHomeCode,
+              home_team_name: effectiveHomeName,
+              away_team_code: effectiveAwayCode,
+              away_team_name: effectiveAwayName,
+            })
+          }
+
           if (Object.keys(changes).length > 0) {
             await db.update(matches).set(changes).where(eq(matches.id, match.id))
             updated++
@@ -116,6 +173,29 @@ export async function GET(req: NextRequest) {
         }
       })
     )
+
+    // Fase C — Notificações de confrontos recém-definidos
+    if (newlyDefinedMatches.length > 0) {
+      const byStage = new Map<string, NewlyDefinedMatch[]>()
+      for (const m of newlyDefinedMatches) {
+        if (!byStage.has(m.stage)) byStage.set(m.stage, [])
+        byStage.get(m.stage)!.push(m)
+      }
+
+      for (const [stage, stageMatches] of byStage) {
+        try {
+          const text = bracketDefinedMessage(stage, stageMatches)
+          await sendNotification({
+            type: 'bracket_defined',
+            key: `bracket_defined:${stage}`,
+            chatId: Number(env.TELEGRAM_GROUP_CHAT_ID),
+            text,
+          })
+        } catch (notifErr) {
+          console.error('[poll-fixtures] bracket notification failed:', notifErr)
+        }
+      }
+    }
   } catch (err) {
     error = err instanceof Error ? err.message : String(err)
     console.error('[poll-fixtures] error', err)

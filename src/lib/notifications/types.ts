@@ -8,6 +8,7 @@ export type NotificationType =
   | 'reconciliation_alert'
   | 'welcome_group'
   | 'weekly_recap'
+  | 'bracket_defined'
 
 export type SendOptions = {
   type: NotificationType

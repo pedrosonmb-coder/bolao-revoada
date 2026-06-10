@@ -278,3 +278,33 @@ export function reconciliationAlertMessage(
     `Veja: ${adminUrl}`
   )
 }
+
+const BRACKET_STAGE_LABELS: Record<string, string> = {
+  r32: '16-avos de final',
+  r16: 'Oitavas de final',
+  qf: 'Quartas de final',
+  sf: 'Semifinais',
+  '3rd': '3º lugar',
+  final: 'Final',
+}
+
+export function bracketDefinedMessage(
+  stage: string,
+  stageMatches: {
+    home_team_code: string
+    home_team_name: string
+    away_team_code: string
+    away_team_name: string
+  }[]
+): string {
+  const label = BRACKET_STAGE_LABELS[stage] ?? stage
+  const lines: string[] = [`⚔️ Confrontos definidos: ${label}!`, '']
+  for (const m of stageMatches) {
+    const { flag: hf } = getTeamDisplay(m.home_team_code)
+    const { flag: af } = getTeamDisplay(m.away_team_code)
+    lines.push(`${hf} ${m.home_team_name} × ${m.away_team_name} ${af}`)
+  }
+  lines.push('')
+  lines.push('Bora palpitar antes que feche. Quem vacilar no mata-mata tá fora da briga.')
+  return lines.join('\n')
+}

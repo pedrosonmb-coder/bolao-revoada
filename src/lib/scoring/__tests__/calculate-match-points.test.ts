@@ -19,14 +19,14 @@ describe('calculateMatchPoints', () => {
     expect(r.points_awarded).toBe(25)
   })
 
-  it('placar exato 2x1 em qf → base 25, multiplier 2.5, total 62.5', () => {
+  it('placar exato 2x1 em qf → base 25, multiplier 2.0, total 50', () => {
     const r = calculateMatchPoints(
       { home_score: 2, away_score: 1, qualified_team_code: null },
       { stage: qf, home_score: 2, away_score: 1, qualified_team_code: null }
     )
     expect(r.base_points).toBe(25)
-    expect(r.multiplier).toBe(2.5)
-    expect(r.points_awarded).toBe(62.5)
+    expect(r.multiplier).toBe(2.0)
+    expect(r.points_awarded).toBe(50)
   })
 
   it('vencedor + saldo correto (palpite 2x1, real 3x2) → base 18', () => {
@@ -107,26 +107,26 @@ describe('calculateMatchPoints', () => {
     expect(r.points_awarded).toBe(45)
   })
 
-  it('mata-mata sf vencedor+saldo + acertou classificação → (18+5)*3.0 = 69', () => {
+  it('mata-mata sf vencedor+saldo + acertou classificação → (18+5)*2.0 = 46', () => {
     const r = calculateMatchPoints(
       { home_score: 2, away_score: 1, qualified_team_code: 'home' },
       { stage: sf, home_score: 3, away_score: 2, qualified_team_code: 'home' }
     )
     expect(r.base_points).toBe(18)
     expect(r.classification_bonus).toBe(5)
-    expect(r.multiplier).toBe(3.0)
-    expect(r.points_awarded).toBe(69)
+    expect(r.multiplier).toBe(2.0)
+    expect(r.points_awarded).toBe(46)
   })
 
-  it('final placar 1x1 (pênaltis), palpitou 1x1 e acertou quem passou → (25+5)*4.0 = 120', () => {
+  it('final placar 1x1 (pênaltis), palpitou 1x1 e acertou quem passou → (25+5)*2.5 = 75', () => {
     const r = calculateMatchPoints(
       { home_score: 1, away_score: 1, qualified_team_code: 'away' },
       { stage: final, home_score: 1, away_score: 1, qualified_team_code: 'away' }
     )
     expect(r.base_points).toBe(25)
     expect(r.classification_bonus).toBe(5)
-    expect(r.multiplier).toBe(4.0)
-    expect(r.points_awarded).toBe(120)
+    expect(r.multiplier).toBe(2.5)
+    expect(r.points_awarded).toBe(75)
   })
 
   it('3rd lugar placar exato + classificação → (25+5)*2.0 = 60', () => {
@@ -155,6 +155,6 @@ describe('calculateMatchPoints', () => {
       { stage: qf, home_score: 2, away_score: 1, qualified_team_code: 'home' }
     )
     expect(r.classification_bonus).toBe(0)
-    expect(r.points_awarded).toBe(25 * 2.5)
+    expect(r.points_awarded).toBe(25 * 2.0)
   })
 })

@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { db } from '@/lib/db'
 import { matches, predictions, predictionHistory } from '@/lib/db/schema'
 import { requireUser } from '@/lib/server/auth'
+import { isMatchTbd } from '@/lib/poll-fixtures/team-sync'
 
 const predictionSchema = z.object({
   match_id: z.number().int().positive(),
@@ -45,6 +46,13 @@ export async function POST(req: NextRequest) {
   const match = await db.select().from(matches).where(eq(matches.id, match_id)).get()
   if (!match) {
     return NextResponse.json({ error: 'Jogo não encontrado' }, { status: 404 })
+  }
+
+  if (isMatchTbd(match)) {
+    return NextResponse.json(
+      { error: 'teams_not_defined', message: 'Confronto ainda não definido. Aguarde os classificados.' },
+      { status: 403 },
+    )
   }
 
   const now = new Date()

@@ -7,7 +7,9 @@ import { ClassificationSelector } from './classification-selector'
 import { useDebouncedSave } from '@/hooks/use-debounced-save'
 import { savePrediction } from '@/lib/api/predictions'
 import { useToast } from '@/components/ui/toast'
+import { Badge } from '@/components/ui/badge'
 import { getTeamDisplay } from '@/lib/teams'
+import { isMatchTbd } from '@/lib/poll-fixtures/team-sync'
 import type { Match } from '@/lib/db/schema'
 import type { MyPrediction } from '@/hooks/use-my-predictions'
 
@@ -35,7 +37,8 @@ export function MatchCard({ match, prediction, onSaved, isPaid = true }: MatchCa
   const now = new Date()
   const isClosed = now >= new Date(match.predictions_close_at)
   const isLive = match.status === 'live'
-  const disabled = isClosed || isLive || !isPaid
+  const isTbd = isMatchTbd(match)
+  const disabled = isClosed || isLive || !isPaid || isTbd
 
   const [homeScore, setHomeScore] = useState(prediction?.home_score ?? 0)
   const [awayScore, setAwayScore] = useState(prediction?.away_score ?? 0)
@@ -115,6 +118,13 @@ export function MatchCard({ match, prediction, onSaved, isPaid = true }: MatchCa
           <span className="shrink-0 text-xl leading-none">{awayDisplay.flag}</span>
         </span>
       </div>
+
+      {/* Badge TBD */}
+      {isTbd && (
+        <div className="flex justify-center mb-3">
+          <Badge variant="neutral">Aguardando definição</Badge>
+        </div>
+      )}
 
       {/* Data + status do palpite */}
       <div className="flex items-center justify-center gap-1.5 text-xs text-(--color-text-secondary) mb-4">
