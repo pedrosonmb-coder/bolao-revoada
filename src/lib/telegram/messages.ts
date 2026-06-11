@@ -306,3 +306,40 @@ export function bracketDefinedMessage(
   lines.push('Bora palpitar antes que feche. Quem vacilar no mata-mata tá fora da briga.')
   return lines.join('\n')
 }
+
+// ---------------------------------------------------------------------------
+// predictionsRevealedMessage
+// ---------------------------------------------------------------------------
+
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
+export type PredictionRow = { name: string; home: number; away: number }
+
+export function predictionsRevealedMessage(
+  match: { home_team_code: string; away_team_code: string },
+  rows: PredictionRow[],
+  missing: string[]
+): string {
+  if (rows.length === 0) return ''
+
+  const { flag: hf, name: hName } = getTeamDisplay(match.home_team_code)
+  const { flag: af, name: aName } = getTeamDisplay(match.away_team_code)
+
+  const header = `🔓 Palpites revelados\n${hf} ${hName} x ${aName} ${af}`
+
+  const items = rows.map((r) => `${escapeHtml(r.name)} ${r.home}-${r.away}`)
+  const bodyLines: string[] = []
+  for (let i = 0; i < items.length; i += 4) {
+    bodyLines.push(items.slice(i, i + 4).join('  ·  '))
+  }
+
+  const parts = [header, '', ...bodyLines]
+
+  if (missing.length > 0) {
+    parts.push('', `Sem palpite: ${missing.map(escapeHtml).join(', ')}`)
+  }
+
+  return parts.join('\n')
+}

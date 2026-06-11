@@ -9,6 +9,7 @@ export type NotificationType =
   | 'welcome_group'
   | 'weekly_recap'
   | 'bracket_defined'
+  | 'predictions_revealed'
 
 export type SendOptions = {
   type: NotificationType

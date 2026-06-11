@@ -1,9 +1,11 @@
 import { db } from '@/lib/db'
 import { matches, predictions, users, botMessages } from '@/lib/db/schema'
-import { and, eq, gte, lte, isNotNull, isNull, inArray } from 'drizzle-orm'
+import { and, eq, gte, lte, isNotNull, isNull, inArray, count } from 'drizzle-orm'
 import type { Match, User } from '@/lib/db/schema'
 import { getRanking } from '@/lib/scoring/ranking'
 import type { RankingEntry } from '@/lib/scoring/ranking'
+import { getDisplayName } from '@/lib/display-name'
+import type { PredictionRow } from '@/lib/telegram/messages'
 
 // BRT é sempre UTC-3 (Brasil aboliu horário de verão em 2019)
 const BRT_OFFSET_MS = 3 * 60 * 60 * 1000
@@ -131,4 +133,58 @@ export async function areAllMatchesLockedForStage(stage: string): Promise<boolea
     .get()
 
   return !pending
+}
+
+// ---------------------------------------------------------------------------
+// reveal-predictions queries
+// ---------------------------------------------------------------------------
+
+export async function getMatchesToReveal(): Promise<Match[]> {
+  const now = new Date()
+  const windowStart = new Date(now.getTime() - 15 * 60 * 1000)
+  return db
+    .select()
+    .from(matches)
+    .where(
+      and(
+        lte(matches.predictions_close_at, now),
+        gte(matches.predictions_close_at, windowStart),
+        inArray(matches.status, ['scheduled', 'live'])
+      )
+    )
+}
+
+export async function getPredictionsForReveal(
+  matchId: number
+): Promise<{ rows: PredictionRow[]; missing: string[] }> {
+  const activeUsers = await db
+    .select()
+    .from(users)
+    .where(eq(users.is_active, true))
+
+  const preds = await db
+    .select({
+      user_id: predictions.user_id,
+      home_score: predictions.home_score,
+      away_score: predictions.away_score,
+    })
+    .from(predictions)
+    .where(eq(predictions.match_id, matchId))
+
+  const predByUser = new Map(preds.map((p) => [p.user_id, p]))
+
+  const rows: PredictionRow[] = activeUsers
+    .filter((u) => predByUser.has(u.id))
+    .map((u) => {
+      const p = predByUser.get(u.id)!
+      return { name: getDisplayName(u), home: p.home_score, away: p.away_score }
+    })
+    .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
+
+  const missing = activeUsers
+    .filter((u) => !predByUser.has(u.id))
+    .map(getDisplayName)
+    .sort((a, b) => a.localeCompare(b, 'pt-BR'))
+
+  return { rows, missing }
 }
