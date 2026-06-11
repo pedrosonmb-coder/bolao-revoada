@@ -8,7 +8,7 @@ async function main() {
   console.log('✓ Nome configurado')
 
   await bot.api.setMyDescription(
-    'Bot do Bolão do Revoada. Copa do Mundo 2026, R$ 900 em jogo. 9 amigos, 104 jogos, zero corpo mole.'
+    'Bolão da Copa do Mundo 2026. Palpite os 104 jogos, dispute o ranking e concorra ao prêmio. Toque em Abrir Bolão pra começar.'
   )
   console.log('✓ Descrição configurada')
 

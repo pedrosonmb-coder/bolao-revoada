@@ -1,5 +1,4 @@
 import type { Match, Prediction, User } from '@/lib/db/schema'
-import { PRODUCT_CONFIG, TOTAL_PRIZE_BRL } from '@/lib/config'
 import { getFlagEmoji } from './flags'
 import { getTeamDisplay } from '@/lib/teams'
 import type { RankingEntry } from '@/lib/scoring/ranking'
@@ -25,11 +24,10 @@ function formatKickoff(kickoffAt: Date): string {
 }
 
 export function welcomeMessage(firstName: string): string {
-  const total = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(TOTAL_PRIZE_BRL)
   return (
     `Bem-vindo ao Bolão do Revoada, ${firstName}.\n` +
-    `${total} na mesa, 104 jogos, ${PRODUCT_CONFIG.PARTICIPANT_COUNT} amigos.\n` +
-    `Toque abaixo pra começar.`
+    `Entrada R$ 100, premiação 70/20/10 do bolo total.\n` +
+    `Os valores atualizados ficam na aba Prêmio. Toque abaixo pra começar.`
   )
 }
 
