@@ -343,3 +343,22 @@ export function predictionsRevealedMessage(
 
   return parts.join('\n')
 }
+
+export function staleMatchAlertMessage(match: {
+  id: number
+  home_team_name: string
+  away_team_name: string
+  kickoff_at: Date | number
+  status: string
+}): string {
+  const kickoff =
+    match.kickoff_at instanceof Date
+      ? match.kickoff_at
+      : new Date((match.kickoff_at as number) * 1000)
+  const kickoffStr = kickoff.toISOString().replace('T', ' ').slice(0, 16) + ' UTC'
+  return (
+    `⚠️ Resultado não travado: ${match.home_team_name} x ${match.away_team_name} (match_id=${match.id})\n` +
+    `Kickoff: ${kickoffStr} | Status: ${match.status}\n` +
+    `Travar manualmente ou aguardar o próximo poll-live-matches.`
+  )
+}

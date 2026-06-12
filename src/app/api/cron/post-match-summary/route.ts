@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
   const authError = verifyCronAuth(req)
   if (authError) return authError
 
-  const finished = await getFinishedMatchesAwaitingSummary(60)
+  const finished = await getFinishedMatchesAwaitingSummary()
   const topGames = finished.filter((m) => isTopGame(m))
 
   let sent = 0

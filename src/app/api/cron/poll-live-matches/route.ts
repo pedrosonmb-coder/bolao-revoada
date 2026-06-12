@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
         and(
           lte(matches.kickoff_at, cutoff),
           isNull(matches.result_locked_at),
-          inArray(matches.status, ['scheduled', 'live'])
+          inArray(matches.status, ['scheduled', 'live', 'finished'])
         )
       )
 

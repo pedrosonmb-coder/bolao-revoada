@@ -10,6 +10,7 @@ export type NotificationType =
   | 'weekly_recap'
   | 'bracket_defined'
   | 'predictions_revealed'
+  | 'stale_match_alert'
 
 export type SendOptions = {
   type: NotificationType

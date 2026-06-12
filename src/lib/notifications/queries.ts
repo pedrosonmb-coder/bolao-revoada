@@ -2,6 +2,8 @@ import { db } from '@/lib/db'
 import { matches, predictions, users, botMessages } from '@/lib/db/schema'
 import { and, eq, gte, lte, isNotNull, isNull, inArray, count } from 'drizzle-orm'
 import type { Match, User } from '@/lib/db/schema'
+import { filterMatchesWithoutSummary } from './filter-helpers'
+export { filterMatchesWithoutSummary }
 import { getRanking } from '@/lib/scoring/ranking'
 import type { RankingEntry } from '@/lib/scoring/ranking'
 import { getDisplayName } from '@/lib/display-name'
@@ -92,15 +94,17 @@ export async function getMatchesFinishedToday(): Promise<Match[]> {
     )
 }
 
-export async function getFinishedMatchesAwaitingSummary(
-  minutesAgo: number = 60
-): Promise<Match[]> {
-  const since = new Date(Date.now() - minutesAgo * 60 * 1000)
+export async function getFinishedMatchesAwaitingSummary(): Promise<Match[]> {
+  // 24h defensive limit prevents backfilling old results on cold restarts while
+  // covering delayed locks (e.g. lock fires 1-2h after kickoff due to API issues).
+  // No 60-min window: as long as result_locked_at is set and no post_match_top was
+  // sent, the summary will be posted on the next cron run regardless of when it locked.
+  const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000)
 
   const recentlyFinished = await db
     .select()
     .from(matches)
-    .where(and(isNotNull(matches.result_locked_at), gte(matches.result_locked_at, since)))
+    .where(and(isNotNull(matches.result_locked_at), gte(matches.result_locked_at, since24h)))
 
   if (recentlyFinished.length === 0) return []
 
@@ -117,7 +121,7 @@ export async function getFinishedMatchesAwaitingSummary(
     )
 
   const sentMatchIds = new Set(alreadySent.map((r) => r.match_id))
-  return recentlyFinished.filter((m) => !sentMatchIds.has(m.id))
+  return filterMatchesWithoutSummary(recentlyFinished, sentMatchIds)
 }
 
 export async function getAllMatchesForStage(stage: string): Promise<Match[]> {

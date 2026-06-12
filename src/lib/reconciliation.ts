@@ -1,6 +1,6 @@
 import { db } from '@/lib/db'
 import { matches, matchSnapshots } from '@/lib/db/schema'
-import { eq, desc, sql } from 'drizzle-orm'
+import { eq, desc, sql, and, isNotNull } from 'drizzle-orm'
 import type { Match } from '@/lib/db/schema'
 import { fetchMatchFromFootballData } from './data-sources/football-data'
 import { fetchMatchFromFifa } from './data-sources/fifa'
@@ -10,6 +10,9 @@ import type { MatchSnapshot } from './data-sources/types'
 import { recalculateMatchPredictions } from './scoring/recalculate-match-predictions'
 import { checkAndNotifyPhaseOpen } from './notifications/phase-open'
 import { alertAdminConflict } from './notifications/admin-alert'
+import { computeLockDecision, LOCK_THRESHOLD } from './reconciliation-lock'
+export { computeLockDecision } from './reconciliation-lock'
+export type { LockDecision } from './reconciliation-lock'
 
 const CONFLICT_ALERT_THRESHOLD = 5
 
@@ -149,7 +152,7 @@ export async function applyReconciliation(
     return { updated: false, locked: false }
   }
 
-  const snapshot = result.kind === 'agreed' ? result.snapshot : result.snapshot
+  const snapshot = result.snapshot
 
   // Busca estado atual para idempotência
   const [current] = await db
@@ -163,17 +166,22 @@ export async function applyReconciliation(
   // Já está locked — não sobrescreve
   if (current.result_locked_at) return { updated: false, locked: false }
 
+  // Never overwrite a known score with null — the API can transiently return null
+  // for finished matches before the official scoresheet is confirmed.
+  const effectiveHomeScore = snapshot.home_score !== null ? snapshot.home_score : current.home_score
+  const effectiveAwayScore = snapshot.away_score !== null ? snapshot.away_score : current.away_score
+
   const sameAsStored =
-    current.home_score === snapshot.home_score &&
-    current.away_score === snapshot.away_score &&
+    current.home_score === effectiveHomeScore &&
+    current.away_score === effectiveAwayScore &&
     current.status === snapshot.status
 
   if (!sameAsStored) {
     await db
       .update(matches)
       .set({
-        home_score: snapshot.home_score,
-        away_score: snapshot.away_score,
+        home_score: effectiveHomeScore,
+        away_score: effectiveAwayScore,
         home_score_pen: snapshot.home_score_pen,
         away_score_pen: snapshot.away_score_pen,
         status: snapshot.status ?? current.status,
@@ -181,42 +189,54 @@ export async function applyReconciliation(
       .where(eq(matches.id, matchId))
   }
 
-  // Verifica lock: status finished + 10 snapshots consecutivos concordando
+  // Lock check: use only non-null snapshots so halftime/transient nulls don't
+  // reset the stable final score or inflate the agreement count.
   let locked = false
-  if (snapshot.status === 'finished' && result.kind === 'agreed') {
-    const recent = await db
-      .select()
-      .from(matchSnapshots)
-      .where(eq(matchSnapshots.match_id, matchId))
-      .orderBy(desc(matchSnapshots.fetched_at))
-      .limit(10)
-
-    if (recent.length >= 10) {
-      const allAgree = recent.every(
-        (s) =>
-          s.home_score === snapshot.home_score &&
-          s.away_score === snapshot.away_score
+  const recentNonNull = await db
+    .select({ home_score: matchSnapshots.home_score, away_score: matchSnapshots.away_score, status: matchSnapshots.status })
+    .from(matchSnapshots)
+    .where(
+      and(
+        eq(matchSnapshots.match_id, matchId),
+        isNotNull(matchSnapshots.home_score),
+        isNotNull(matchSnapshots.away_score)
       )
-      if (allAgree) {
-        await db
-          .update(matches)
-          .set({ result_locked_at: new Date() })
-          .where(eq(matches.id, matchId))
-        locked = true
-        try {
-          const recalc = await recalculateMatchPredictions(matchId)
-          console.log(`[reconciliation] match ${matchId} LOCKED. Recalculated ${recalc.updated} predictions.`)
-        } catch (err) {
-          console.error(`[reconciliation] match ${matchId} LOCKED, but recalculation FAILED:`, err)
-        }
-        // Verifica se a fase foi concluída e notifica abertura da próxima
-        const [lockedMatch] = await db.select().from(matches).where(eq(matches.id, matchId)).limit(1)
-        if (lockedMatch) {
-          checkAndNotifyPhaseOpen(lockedMatch).catch((err) =>
-            console.error(`[reconciliation] falha ao verificar phase-open para match ${matchId}:`, err)
-          )
-        }
-      }
+    )
+    .orderBy(desc(matchSnapshots.fetched_at))
+    .limit(LOCK_THRESHOLD)
+
+  const decision = computeLockDecision({
+    snapshotStatus: snapshot.status,
+    resultKind: result.kind,
+    recentNonNullSnapshots: recentNonNull.map((s) => ({
+      home_score: s.home_score!,
+      away_score: s.away_score!,
+      status: s.status,
+    })),
+  })
+
+  if (decision.shouldLock) {
+    await db
+      .update(matches)
+      .set({
+        home_score: decision.lockScore.home,
+        away_score: decision.lockScore.away,
+        result_locked_at: new Date(),
+      })
+      .where(eq(matches.id, matchId))
+    locked = true
+    try {
+      const recalc = await recalculateMatchPredictions(matchId)
+      console.log(`[reconciliation] match ${matchId} LOCKED. Recalculated ${recalc.updated} predictions.`)
+    } catch (err) {
+      console.error(`[reconciliation] match ${matchId} LOCKED, but recalculation FAILED:`, err)
+    }
+    // Verifica se a fase foi concluída e notifica abertura da próxima
+    const [lockedMatch] = await db.select().from(matches).where(eq(matches.id, matchId)).limit(1)
+    if (lockedMatch) {
+      checkAndNotifyPhaseOpen(lockedMatch).catch((err) =>
+        console.error(`[reconciliation] falha ao verificar phase-open para match ${matchId}:`, err)
+      )
     }
   }
 
