@@ -33,3 +33,6 @@ pnpm-debug.log*
 # Turbo
 .turbo/
 tsconfig.tsbuildinfo
+
+# Local-only docs (repo is public)
+docs/STATUS.md
