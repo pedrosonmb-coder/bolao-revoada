@@ -11,6 +11,7 @@ export type NotificationType =
   | 'bracket_defined'
   | 'predictions_revealed'
   | 'stale_match_alert'
+  | 'stale_unscored_alert'
 
 export type SendOptions = {
   type: NotificationType

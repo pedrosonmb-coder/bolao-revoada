@@ -344,6 +344,24 @@ export function predictionsRevealedMessage(
   return parts.join('\n')
 }
 
+export function unscoredMatchAlertMessage(match: {
+  id: number
+  home_team_name: string
+  away_team_name: string
+  result_locked_at: Date | number | null
+}): string {
+  const locked =
+    match.result_locked_at instanceof Date
+      ? match.result_locked_at
+      : new Date((match.result_locked_at as number) * 1000)
+  const lockedStr = locked.toISOString().replace('T', ' ').slice(0, 16) + ' UTC'
+  return (
+    `⚠️ Pontuação não computada: ${match.home_team_name} x ${match.away_team_name} (match_id=${match.id})\n` +
+    `Travado em: ${lockedStr}\n` +
+    `Rodar recálculo manual: POST /api/admin/recalculate {"match_id": ${match.id}}`
+  )
+}
+
 export function staleMatchAlertMessage(match: {
   id: number
   home_team_name: string

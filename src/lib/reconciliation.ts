@@ -8,6 +8,7 @@ import { fetchMatchFromGE } from './data-sources/ge'
 import { fetchMatchFromWikipedia } from './data-sources/wikipedia'
 import type { MatchSnapshot } from './data-sources/types'
 import { recalculateMatchPredictions } from './scoring/recalculate-match-predictions'
+import { retryRecalculate } from './recalculate-retry'
 import { checkAndNotifyPhaseOpen } from './notifications/phase-open'
 import { alertAdminConflict } from './notifications/admin-alert'
 import { computeLockDecision, LOCK_THRESHOLD } from './reconciliation-lock'
@@ -225,11 +226,9 @@ export async function applyReconciliation(
       })
       .where(eq(matches.id, matchId))
     locked = true
-    try {
-      const recalc = await recalculateMatchPredictions(matchId)
+    const recalc = await retryRecalculate(matchId, recalculateMatchPredictions)
+    if (recalc !== null) {
       console.log(`[reconciliation] match ${matchId} LOCKED. Recalculated ${recalc.updated} predictions.`)
-    } catch (err) {
-      console.error(`[reconciliation] match ${matchId} LOCKED, but recalculation FAILED:`, err)
     }
     // Verifica se a fase foi concluída e notifica abertura da próxima
     const [lockedMatch] = await db.select().from(matches).where(eq(matches.id, matchId)).limit(1)
