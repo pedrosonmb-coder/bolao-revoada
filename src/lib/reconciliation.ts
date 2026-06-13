@@ -7,6 +7,7 @@ import { fetchMatchFromFifa } from './data-sources/fifa'
 import { fetchMatchFromGE } from './data-sources/ge'
 import { fetchMatchFromWikipedia } from './data-sources/wikipedia'
 import type { MatchSnapshot } from './data-sources/types'
+import { isPlausibleSnapshot, selectConsensusSnapshots } from './data-sources/validate'
 import { recalculateMatchPredictions } from './scoring/recalculate-match-predictions'
 import { retryRecalculate } from './recalculate-retry'
 import { checkAndNotifyPhaseOpen } from './notifications/phase-open'
@@ -68,7 +69,7 @@ export async function reconcileMatch(match: Match): Promise<ReconciliationResult
   ])
 
   const phase1: MatchSnapshot[] = [fdSnapshot, fifaSnapshot].filter(
-    (s): s is MatchSnapshot => s !== null
+    (s): s is MatchSnapshot => s !== null && isPlausibleSnapshot(s)
   )
 
   // Persiste snapshots da fase 1
@@ -93,13 +94,24 @@ export async function reconcileMatch(match: Match): Promise<ReconciliationResult
     fetchMatchFromWikipedia(match.home_team_code, match.away_team_code, kickoff),
   ])
 
-  const phase2: MatchSnapshot[] = [geSnapshot, wikiSnapshot].filter(
-    (s): s is MatchSnapshot => s !== null
-  )
+  // Only save plausible phase 2 snapshots — implausible scores (e.g. Wikipedia regex
+  // returning "2025-8") must not reach match_snapshots, or the lock query (IS NOT NULL)
+  // would see the bad score and block locking. Log before discarding for observability.
+  const phase2Plausible: MatchSnapshot[] = []
+  for (const s of [geSnapshot, wikiSnapshot]) {
+    if (s === null) continue
+    if (!isPlausibleSnapshot(s)) {
+      console.warn(`[reconciliation] snapshot implausivel descartado de ${s.source} para match ${match.id}: ${s.home_score}-${s.away_score}`)
+      continue
+    }
+    phase2Plausible.push(s)
+  }
+  await Promise.all(phase2Plausible.map((s) => saveSnapshot(match.id, s)))
 
-  await Promise.all(phase2.map((s) => saveSnapshot(match.id, s)))
-
-  const all = [...phase1, ...phase2]
+  // Wikipedia is last resort: only enters consensus when no structured source responded.
+  // Prevents a bad Wikipedia regex match (e.g. 2025-8 from USA×PAR on 2026-06-13) from
+  // causing a multi-hour conflict against a stable football-data result.
+  const all = selectConsensusSnapshots({ phase1Snapshots: phase1, geSnapshot, wikiSnapshot })
 
   if (all.length === 0) {
     return { kind: 'all_failed', reason: 'Nenhuma fonte respondeu' }
@@ -192,6 +204,8 @@ export async function applyReconciliation(
 
   // Lock check: use only non-null snapshots so halftime/transient nulls don't
   // reset the stable final score or inflate the agreement count.
+  // No score-range filter needed here — implausible scores are rejected at write time
+  // (isPlausibleSnapshot above), so the DB only contains plausible values.
   let locked = false
   const recentNonNull = await db
     .select({ home_score: matchSnapshots.home_score, away_score: matchSnapshots.away_score, status: matchSnapshots.status })

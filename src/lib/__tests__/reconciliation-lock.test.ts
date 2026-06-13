@@ -158,4 +158,37 @@ describe('computeLockDecision', () => {
     expect(result.shouldLock).toBe(true)
     expect(result.lockScore).toEqual({ home: 3, away: 1 })
   })
+
+  // Testes Opção A: prova que a query de lock não precisa de filtro próprio de plausibilidade,
+  // porque snapshots implausíveis são rejeitados no saveSnapshot (reconciliation.ts fase 2).
+
+  // Sem Opção A: mostra o que aconteceria se 2025-8 chegasse ao banco (lock bloqueado)
+  it('banco contaminado (cenário pré-fix): 2025-8 entre finished → não trava (allAgree falha)', () => {
+    const result = computeLockDecision({
+      snapshotStatus: 'finished',
+      resultKind: 'partial',
+      recentNonNullSnapshots: [
+        { home_score: 2025, away_score: 8, status: 'finished' }, // Wikipedia antes da Opção A
+        { home_score: 4, away_score: 1, status: 'finished' },
+        { home_score: 4, away_score: 1, status: 'finished' },
+        { home_score: 4, away_score: 1, status: 'finished' },
+      ],
+    })
+    expect(result.shouldLock).toBe(false) // 2025-8 ≠ 4-1 → allAgree=false → 7h de conflict
+  })
+
+  // Com Opção A: 2025-8 nunca chega ao banco → série limpa → trava corretamente
+  it('banco limpo (Opção A aplicada): 3 snapshots finished 4-1 → trava 4-1', () => {
+    const result = computeLockDecision({
+      snapshotStatus: 'finished',
+      resultKind: 'partial',
+      recentNonNullSnapshots: [
+        { home_score: 4, away_score: 1, status: 'finished' },
+        { home_score: 4, away_score: 1, status: 'finished' },
+        { home_score: 4, away_score: 1, status: 'finished' },
+      ],
+    })
+    expect(result.shouldLock).toBe(true)
+    expect(result.lockScore).toEqual({ home: 4, away: 1 })
+  })
 })
