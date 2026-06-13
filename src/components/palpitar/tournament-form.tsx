@@ -88,18 +88,18 @@ export function TournamentForm({ existing, isPaid = true, closesAt }: Tournament
   const formDisabled = !isPaid || saving || isClosed
 
   return (
-    <form onSubmit={handleSubmit} className={`px-4 py-4 space-y-4 ${!isPaid || isClosed ? 'opacity-60 pointer-events-none' : ''}`}>
-      {isClosed ? (
-        <div className="bg-amber-400 text-amber-950 text-sm px-3 py-2 rounded-lg font-medium">
+    <>
+      {isClosed && (
+        <div className="bg-amber-400 text-amber-950 text-sm px-4 py-2.5 rounded-lg font-medium mx-4 mt-2">
           Palpites de torneio encerrados.
         </div>
-      ) : (
+      )}
+      <form onSubmit={handleSubmit} className={`px-4 py-4 space-y-4 ${!isPaid || isClosed ? 'opacity-60 pointer-events-none' : ''}`}>
         <p className="text-sm text-(--color-text-secondary)">
           {isPaid
             ? 'Palpites pré-Copa. Confirme antes de enviar. Máximo: 325 pts.'
             : 'Pagamento pendente. Palpites bloqueados até confirmação.'}
         </p>
-      )}
 
       {/* Campeão */}
       <div>
@@ -179,5 +179,6 @@ export function TournamentForm({ existing, isPaid = true, closesAt }: Tournament
         {saving ? 'Salvando...' : 'Salvar palpites de torneio'}
       </button>
     </form>
+    </>
   )
 }
