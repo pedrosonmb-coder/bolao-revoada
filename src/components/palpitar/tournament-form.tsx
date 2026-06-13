@@ -9,9 +9,10 @@ import type { TournamentPrediction } from '@/lib/db/schema'
 type TournamentFormProps = {
   existing: TournamentPrediction | null
   isPaid?: boolean
+  closesAt?: string | null
 }
 
-export function TournamentForm({ existing, isPaid = true }: TournamentFormProps) {
+export function TournamentForm({ existing, isPaid = true, closesAt }: TournamentFormProps) {
   const { toast } = useToast()
   const [form, setForm] = useState<TournamentPredictionPayload>({
     champion_code: existing?.champion_code ?? '',
@@ -83,15 +84,22 @@ export function TournamentForm({ existing, isPaid = true }: TournamentFormProps)
     { key: 'best_young_player_name' as const, label: 'Melhor jovem', pts: 25 },
   ]
 
-  const formDisabled = !isPaid || saving
+  const isClosed = closesAt ? new Date() >= new Date(closesAt) : false
+  const formDisabled = !isPaid || saving || isClosed
 
   return (
-    <form onSubmit={handleSubmit} className={`px-4 py-4 space-y-4 ${!isPaid ? 'opacity-60 pointer-events-none' : ''}`}>
-      <p className="text-sm text-(--color-text-secondary)">
-        {isPaid
-          ? 'Palpites pré-Copa. Confirme antes de enviar. Máximo: 325 pts.'
-          : 'Pagamento pendente. Palpites bloqueados até confirmação.'}
-      </p>
+    <form onSubmit={handleSubmit} className={`px-4 py-4 space-y-4 ${!isPaid || isClosed ? 'opacity-60 pointer-events-none' : ''}`}>
+      {isClosed ? (
+        <div className="bg-amber-400 text-amber-950 text-sm px-3 py-2 rounded-lg font-medium">
+          Palpites de torneio encerrados.
+        </div>
+      ) : (
+        <p className="text-sm text-(--color-text-secondary)">
+          {isPaid
+            ? 'Palpites pré-Copa. Confirme antes de enviar. Máximo: 325 pts.'
+            : 'Pagamento pendente. Palpites bloqueados até confirmação.'}
+        </p>
+      )}
 
       {/* Campeão */}
       <div>

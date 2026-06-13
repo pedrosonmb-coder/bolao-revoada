@@ -28,7 +28,7 @@ export function PalpitarTabs() {
   const { matches: allMatches, isLoading: loadingMatches } = useMatches()
   const { predictionsMap, mutate } = useMyPredictions()
   const { isPaid } = usePaymentStatus()
-  const { data: tournamentData } = useSWR<{ prediction: TournamentPrediction | null }>(
+  const { data: tournamentData } = useSWR<{ prediction: TournamentPrediction | null; closes_at: string | null }>(
     '/api/tournament-predictions/my',
     swrFetcher
   )
@@ -92,7 +92,11 @@ export function PalpitarTabs() {
       ) : (
         <>
           {activeTab === 'torneio' && (
-            <TournamentForm existing={tournamentData?.prediction ?? null} isPaid={isPaid} />
+            <TournamentForm
+              existing={tournamentData?.prediction ?? null}
+              isPaid={isPaid}
+              closesAt={tournamentData?.closes_at ?? null}
+            />
           )}
           {activeTab === 'grupos' && (
             <GroupsList
