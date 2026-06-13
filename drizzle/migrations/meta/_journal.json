@@ -43,6 +43,13 @@
       "when": 1781042121889,
       "tag": "0005_hesitant_scarecrow",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1781379717094,
+      "tag": "0006_strange_sage",
+      "breakpoints": true
     }
   ]
 }

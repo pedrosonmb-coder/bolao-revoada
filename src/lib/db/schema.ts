@@ -266,6 +266,33 @@ export const pollingLogs = sqliteTable('polling_logs', {
 })
 
 // ---------------------------------------------------------------------------
+// ranking_snapshots (série temporal de posição — 1 linha por usuário por dia)
+// ---------------------------------------------------------------------------
+export const rankingSnapshots = sqliteTable(
+  'ranking_snapshots',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    user_id: integer('user_id')
+      .notNull()
+      .references(() => users.id),
+    position: integer('position').notNull(),
+    total_points: integer('total_points').notNull(),
+    // 'YYYY-MM-DD' UTC — 1 snapshot por usuário por dia; uniqueIndex garante idempotência
+    snapshot_date: text('snapshot_date').notNull(),
+    created_at: integer('created_at', { mode: 'timestamp' })
+      .notNull()
+      .default(sql`(unixepoch())`),
+  },
+  (table) => ({
+    userDateUnique: uniqueIndex('ranking_snapshots_user_date_idx').on(
+      table.user_id,
+      table.snapshot_date
+    ),
+    userIdIdx: index('ranking_snapshots_user_id_idx').on(table.user_id),
+  })
+)
+
+// ---------------------------------------------------------------------------
 // Tipos inferidos para uso na aplicação
 // ---------------------------------------------------------------------------
 export type User = typeof users.$inferSelect
@@ -283,3 +310,4 @@ export type MatchSnapshot = typeof matchSnapshots.$inferSelect
 export type NewMatchSnapshot = typeof matchSnapshots.$inferInsert
 export type PollingLog = typeof pollingLogs.$inferSelect
 export type NewPollingLog = typeof pollingLogs.$inferInsert
+export type RankingSnapshot = typeof rankingSnapshots.$inferSelect
