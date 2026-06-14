@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import Link from 'next/link'
 import { X } from 'lucide-react'
 import { useUserDetail } from '@/hooks/use-ranking'
 import { useRegisterOverlay } from '@/hooks/use-register-overlay'
@@ -145,6 +146,14 @@ export function UserDetailDrawer({ userId, onClose }: Props) {
                 </div>
               </div>
             )}
+
+            <Link
+              href={`/ranking/${userId}`}
+              className="flex items-center justify-center gap-1 text-sm font-semibold text-(--color-accent-primary) py-1"
+              onClick={onClose}
+            >
+              Ver desempenho completo →
+            </Link>
           </div>
         )}
       </div>

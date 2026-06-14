@@ -1,0 +1,377 @@
+'use client'
+
+import { useParams, useRouter } from 'next/navigation'
+import { ChevronLeft } from 'lucide-react'
+import { useUserFull } from '@/hooks/use-ranking'
+import { getTeamDisplay } from '@/lib/teams'
+import { Skeleton } from '@/components/ui/skeleton'
+import type { Distribution, MatchResult } from '@/lib/scoring/full-ranking-helpers'
+import type { MatchEntry } from '@/hooks/use-ranking'
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+const MEDAL_COLORS = ['#FFD700', '#C0C0C0', '#CD7F32'] as const
+
+function MedalIcon({ position }: { position: number }) {
+  const color = MEDAL_COLORS[position - 1]
+  if (color) {
+    return (
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
+        <circle cx="7" cy="7" r="7" fill={color} />
+        <text x="7" y="10.5" textAnchor="middle" fontSize="7" fontWeight="bold" fill="#fff">
+          {position}
+        </text>
+      </svg>
+    )
+  }
+  return (
+    <span className="font-[family-name:var(--font-tight)] font-black text-sm text-white leading-none tabular-nums">
+      {position}
+    </span>
+  )
+}
+
+const DIST_COLORS: Record<keyof Distribution, string> = {
+  exact:           '#0A2D82',
+  score_diff:      '#16A34A',
+  winner_goals_w:  '#65A30D',
+  winner_goals_l:  '#CA8A04',
+  winner_only:     '#EA580C',
+  miss:            '#DC2626',
+}
+
+const DIST_LABELS: Record<keyof Distribution, string> = {
+  exact:          'Placar exato',
+  score_diff:     'Saldo certo',
+  winner_goals_w: 'Gols vencedor',
+  winner_goals_l: 'Gols perdedor',
+  winner_only:    'Só vencedor',
+  miss:           'Errou',
+}
+
+const DIST_KEYS: (keyof Distribution)[] = [
+  'exact', 'score_diff', 'winner_goals_w', 'winner_goals_l', 'winner_only', 'miss',
+]
+
+function distTotal(d: Distribution) {
+  return DIST_KEYS.reduce((s, k) => s + d[k], 0)
+}
+
+function getProfileLabel(d: Distribution): { label: string; desc: string } {
+  const total = distTotal(d)
+  if (total === 0) return { label: '—', desc: 'Nenhum palpite computado ainda' }
+  const exactPct = d.exact / total
+  const precisionPct = (d.exact + d.score_diff) / total
+  const missPct = d.miss / total
+  const boldPct = (d.winner_goals_l + d.winner_only) / total
+  if (exactPct >= 0.30) return { label: 'Vidente', desc: 'Placa exata com frequência absurda' }
+  if (precisionPct >= 0.40) return { label: 'Cirúrgico', desc: 'Erra pouco, sempre acerta o saldo' }
+  if (missPct < 0.20) return { label: 'Consistente', desc: 'Raramente erra o vencedor' }
+  if (boldPct >= 0.30) return { label: 'Apostador', desc: 'Vai de cabeça, às vezes paga caro' }
+  return { label: 'Equilibrado', desc: 'Bem distribuído entre os acertos' }
+}
+
+function fmt(n: number, digits = 1) {
+  return n.toLocaleString('pt-BR', { minimumFractionDigits: digits, maximumFractionDigits: digits })
+}
+
+// ---------------------------------------------------------------------------
+// Sub-components
+// ---------------------------------------------------------------------------
+
+function SegmentedBar({ distribution }: { distribution: Distribution }) {
+  const total = distTotal(distribution)
+  const { label, desc } = getProfileLabel(distribution)
+
+  return (
+    <div>
+      {total === 0 ? (
+        <div className="h-4 rounded-full bg-(--color-bg-surface)" />
+      ) : (
+        <div className="flex h-4 rounded-full overflow-hidden">
+          {DIST_KEYS.map((k) => {
+            const pct = (distribution[k] / total) * 100
+            if (pct === 0) return null
+            return (
+              <div
+                key={k}
+                style={{ width: `${pct}%`, backgroundColor: DIST_COLORS[k] }}
+              />
+            )
+          })}
+        </div>
+      )}
+
+      <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1">
+        {DIST_KEYS.map((k) => {
+          const count = distribution[k]
+          if (count === 0) return null
+          return (
+            <span key={k} className="flex items-center gap-1 text-xs text-(--color-text-secondary)">
+              <span
+                className="inline-block w-2 h-2 rounded-full flex-shrink-0"
+                style={{ backgroundColor: DIST_COLORS[k] }}
+              />
+              {count} {DIST_LABELS[k]}
+            </span>
+          )
+        })}
+      </div>
+
+      <div className="mt-3 flex items-center justify-between">
+        <div>
+          <span className="font-[family-name:var(--font-tight)] font-black text-lg text-(--color-text-primary)">
+            {label}
+          </span>
+          <p className="text-xs text-(--color-text-secondary)">{desc}</p>
+        </div>
+        {total > 0 && (
+          <span className="text-xs text-(--color-text-secondary)">
+            {total} jogo{total !== 1 ? 's' : ''}
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function MatchCard({ match }: { match: MatchResult & { isBest?: boolean } }) {
+  const home = getTeamDisplay(match.home_team_code)
+  const away = getTeamDisplay(match.away_team_code)
+  return (
+    <div className="bg-(--color-bg-surface) rounded-xl p-3">
+      <p className="text-xs text-(--color-text-secondary) mb-2">
+        {match.isBest ? 'Melhor acerto' : 'Maior tropeço'}
+      </p>
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-medium text-(--color-text-primary)">
+          {home.flag} {home.name}
+        </span>
+        <span className="text-xs text-(--color-text-secondary)">×</span>
+        <span className="text-sm font-medium text-(--color-text-primary) text-right">
+          {away.name} {away.flag}
+        </span>
+      </div>
+      <p className="text-center mt-1.5">
+        <span
+          className="font-[family-name:var(--font-tight)] font-black text-xl"
+          style={{ color: match.isBest ? 'var(--color-status-success)' : 'var(--color-status-danger)' }}
+        >
+          {match.points_awarded} pts
+        </span>
+      </p>
+    </div>
+  )
+}
+
+function pointsColor(base: number): string {
+  if (base === 25) return 'var(--color-accent-primary)'
+  if (base === 18) return 'var(--color-status-success)'
+  if (base >= 10) return '#65A30D'
+  return '#9CA3AF'
+}
+
+function CampanhaRow({ m }: { m: MatchEntry }) {
+  const home = getTeamDisplay(m.home_team_code)
+  const away = getTeamDisplay(m.away_team_code)
+  const hasScore = m.home_score != null && m.away_score != null
+  const color = pointsColor(m.base_points)
+
+  return (
+    <div className="flex items-center gap-3 py-2.5 border-b border-(--color-border-base) last:border-0">
+      <div
+        className="w-10 text-center font-[family-name:var(--font-tight)] font-black text-base flex-shrink-0"
+        style={{ color }}
+      >
+        {m.points_awarded}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm text-(--color-text-primary) truncate">
+          {home.flag} {home.name} × {away.name} {away.flag}
+        </p>
+        <p className="text-xs text-(--color-text-secondary) mt-0.5">
+          {hasScore ? (
+            <>
+              <span className="font-medium">{m.home_score}–{m.away_score}</span>
+              {' · palpite '}
+              <span>{m.palpite_home}–{m.palpite_away}</span>
+            </>
+          ) : (
+            'Aguardando resultado'
+          )}
+        </p>
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Page
+// ---------------------------------------------------------------------------
+
+export default function UserPerformancePage() {
+  const { user_id } = useParams<{ user_id: string }>()
+  const router = useRouter()
+  const { data, isLoading, error } = useUserFull(user_id)
+
+  const goBack = () => router.push('/ranking')
+
+  // ---------- loading ----------
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-(--color-bg-base)">
+        <div className="bg-(--color-accent-primary) px-4 pt-4 pb-8">
+          <button onClick={goBack} className="flex items-center gap-1 text-white/70 text-sm">
+            <ChevronLeft size={16} /> Ranking
+          </button>
+          <div className="mt-5 flex items-center gap-4">
+            <Skeleton className="w-16 h-16 rounded-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-5 w-32 bg-white/20" />
+              <Skeleton className="h-3 w-20 bg-white/20" />
+            </div>
+          </div>
+          <Skeleton className="h-12 w-24 mx-auto mt-6 bg-white/20" />
+        </div>
+        <div className="p-4 space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-20 rounded-xl" />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (error || !data) {
+    return (
+      <div className="min-h-screen bg-(--color-bg-base) flex flex-col">
+        <div className="bg-(--color-accent-primary) px-4 pt-4 pb-6">
+          <button onClick={goBack} className="flex items-center gap-1 text-white/70 text-sm">
+            <ChevronLeft size={16} /> Ranking
+          </button>
+        </div>
+        <div className="flex-1 flex items-center justify-center p-8 text-center">
+          <p className="text-(--color-text-secondary)">Participante não encontrado.</p>
+        </div>
+      </div>
+    )
+  }
+
+  const { user, totals, achievements, distribution, best_match, worst_match, group_comparison, matches } = data
+  const total = distTotal(distribution)
+  const accuracyPct = total > 0 ? Math.round((achievements.winners_correct / total) * 100) : 0
+  const diff = group_comparison.user_avg_per_match - group_comparison.group_avg_per_match
+  const diffStr = (diff >= 0 ? '+' : '') + fmt(diff) + ' pts/jogo'
+
+  return (
+    <div className="min-h-screen bg-(--color-bg-base)">
+      {/* ---------------------------------------------------------------- HERO */}
+      <div className="bg-(--color-accent-primary) text-white px-4 pt-4 pb-10">
+        <button
+          onClick={goBack}
+          className="flex items-center gap-1 text-white/70 text-sm mb-5 -ml-0.5"
+        >
+          <ChevronLeft size={16} /> Ranking
+        </button>
+
+        <div className="flex items-center gap-4">
+          {user.photo_url ? (
+            <img
+              src={user.photo_url}
+              alt={user.name}
+              className="w-16 h-16 rounded-full object-cover ring-2 ring-white/30"
+            />
+          ) : (
+            <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center font-[family-name:var(--font-tight)] font-black text-2xl text-white flex-shrink-0">
+              {user.name[0]}
+            </div>
+          )}
+          <div>
+            <h1 className="font-[family-name:var(--font-tight)] font-black text-2xl leading-tight">
+              {user.name}
+            </h1>
+            <div className="flex items-center gap-2 mt-1">
+              <MedalIcon position={totals.position} />
+              <span className="text-white/80 text-sm">{totals.position}º lugar</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6 text-center">
+          <p className="text-white/60 text-xs uppercase tracking-widest mb-0.5">Total de pontos</p>
+          <p className="font-[family-name:var(--font-tight)] font-black text-6xl leading-none">
+            {totals.total_points}
+          </p>
+          <p className="text-white/60 text-xs mt-2">
+            {totals.match_points} de partidas · {totals.tournament_points} de torneio
+          </p>
+        </div>
+      </div>
+
+      <div className="px-4 -mt-4 space-y-3 pb-8">
+        {/* ----------------------------------------------------- ATRIBUTOS */}
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-(--color-bg-surface) rounded-xl p-3 text-center">
+            <p className="text-xs text-(--color-text-secondary) mb-1">Placares exatos</p>
+            <p className="font-[family-name:var(--font-tight)] font-black text-xl text-(--color-text-primary)">
+              {achievements.exact_scores}
+            </p>
+          </div>
+          <div className="bg-(--color-bg-surface) rounded-xl p-3 text-center">
+            <p className="text-xs text-(--color-text-secondary) mb-1">% acerto</p>
+            <p className="font-[family-name:var(--font-tight)] font-black text-xl text-(--color-text-primary)">
+              {accuracyPct}%
+            </p>
+          </div>
+          <div className="bg-(--color-bg-surface) rounded-xl p-3 text-center">
+            <p className="text-xs text-(--color-text-secondary) mb-1">vs grupo</p>
+            <p
+              className="font-[family-name:var(--font-tight)] font-black text-base leading-tight"
+              style={{ color: diff >= 0 ? 'var(--color-status-success)' : 'var(--color-status-danger)' }}
+            >
+              {diffStr}
+            </p>
+          </div>
+        </div>
+
+        {/* ------------------------------------------ PERFIL DE PALPITE */}
+        <div className="bg-(--color-bg-surface) rounded-xl p-4">
+          <p className="text-xs font-semibold text-(--color-text-secondary) uppercase tracking-wide mb-3">
+            Perfil de palpite
+          </p>
+          <SegmentedBar distribution={distribution} />
+        </div>
+
+        {/* ----------------------------------------------- MELHOR / PIOR */}
+        {(best_match || worst_match) && (
+          <div className="grid grid-cols-2 gap-3">
+            {best_match && <MatchCard match={{ ...best_match, isBest: true }} />}
+            {worst_match && <MatchCard match={{ ...worst_match, isBest: false }} />}
+          </div>
+        )}
+
+        {/* ---------------------------------------------------- CAMPANHA */}
+        {matches.length > 0 && (
+          <div className="bg-(--color-bg-surface) rounded-xl px-3">
+            <p className="text-xs font-semibold text-(--color-text-secondary) uppercase tracking-wide pt-3 pb-1 px-1">
+              Campanha
+            </p>
+            {matches.map((m) => (
+              <CampanhaRow key={m.match_id} m={m} />
+            ))}
+          </div>
+        )}
+
+        {matches.length === 0 && (
+          <div className="bg-(--color-bg-surface) rounded-xl p-6 text-center">
+            <p className="text-sm text-(--color-text-secondary)">
+              Nenhum resultado computado ainda.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
