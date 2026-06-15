@@ -78,11 +78,9 @@ export default function HistoricoPage() {
                   <span className="text-xs text-(--color-text-primary) truncate">{getTeamDisplay(p.match.away_team_code).name}</span>
                   <span className="text-lg leading-none shrink-0">{getTeamDisplay(p.match.away_team_code).flag}</span>
                 </span>
-                {p.updated_at && (
-                  <span className="ml-auto text-xs text-(--color-text-secondary)">
-                    {formatKickoff(p.updated_at)}
-                  </span>
-                )}
+                <span className="ml-auto text-xs text-(--color-text-secondary)">
+                  {formatKickoff(p.match.kickoff_at)}
+                </span>
               </div>
             ))}
           </div>

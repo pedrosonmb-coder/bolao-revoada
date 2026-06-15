@@ -102,58 +102,60 @@ describe('findBestMatch', () => {
 })
 
 describe('findWorstMatch', () => {
-  describe('com placar real (critério de distância)', () => {
-    it('retorna o palpite mais distante do placar real', () => {
-      // id1: dist = |0-1| + |1-0| = 2
-      // id2: dist = |0-3| + |1-0| = 4  ← maior
-      // id3: dist = |1-1| + |1-0| = 1
-      const preds = [
-        matchFull(1, 10, 10, 1, 0, 0, 1),
-        matchFull(2,  0,  0, 3, 0, 0, 1),
-        matchFull(3, 18, 18, 1, 0, 1, 1),
-      ]
-      expect(findWorstMatch(preds)?.match_id).toBe(2)
-    })
-
-    it('empate em distância → retorna o primeiro (estável)', () => {
-      // ambos: dist = |0-1| + |0-1| = 2
-      const preds = [
-        matchFull(1, 10, 10, 1, 1, 0, 0),
-        matchFull(2, 10, 10, 1, 1, 0, 0),
-      ]
-      expect(findWorstMatch(preds)?.match_id).toBe(1)
-    })
-
-    it('ignora preds sem placar real ao calcular distância', () => {
-      // id1 sem placar; id2 com dist=5, id3 com dist=1
-      const preds = [
-        match(1, 0, 0),
-        matchFull(2, 0, 0, 3, 2, 0, 0),  // dist = |0-3| + |0-2| = 5
-        matchFull(3, 10, 10, 1, 0, 0, 1), // dist = |0-1| + |1-0| = 2
-      ]
-      expect(findWorstMatch(preds)?.match_id).toBe(2)
-    })
-
-    it('array vazio → null', () => {
-      expect(findWorstMatch([])).toBeNull()
-    })
+  it('null quando não há palpites com 0 pontos', () => {
+    const preds = [
+      matchFull(1, 10, 10, 1, 0, 1, 0),
+      matchFull(2, 18, 18, 2, 1, 2, 1),
+    ]
+    expect(findWorstMatch(preds)).toBeNull()
   })
 
-  describe('sem placar real (fallback para menor points_awarded)', () => {
-    it('retorna o de menor points_awarded quando não há scores', () => {
-      const result = findWorstMatch([match(1, 10, 10), match(2, 50, 25), match(3, 0, 0)])
-      expect(result?.match_id).toBe(3)
-      expect(result?.points_awarded).toBe(0)
-    })
+  it('null quando zeros existem mas sem placar real', () => {
+    const preds = [
+      match(1, 0, 0),
+      matchFull(2, 10, 10, 1, 0, 0, 1),
+    ]
+    expect(findWorstMatch(preds)).toBeNull()
+  })
 
-    it('todos com 0 pts → retorna o primeiro (estável)', () => {
-      const result = findWorstMatch([match(1, 0, 0), match(2, 0, 0)])
-      expect(result?.match_id).toBe(1)
-    })
+  it('retorna o zero com maior distância', () => {
+    // id1: 0 pts, dist = |0-1| + |1-0| = 2
+    // id2: 0 pts, dist = |0-3| + |1-0| = 4  ← maior
+    // id3: 10 pts → não candidato
+    const preds = [
+      matchFull(1, 0, 0, 1, 0, 0, 1),
+      matchFull(2, 0, 0, 3, 0, 0, 1),
+      matchFull(3, 10, 10, 1, 0, 1, 0),
+    ]
+    expect(findWorstMatch(preds)?.match_id).toBe(2)
+  })
 
-    it('array vazio → null', () => {
-      expect(findWorstMatch([])).toBeNull()
-    })
+  it('10 pts + grande distância NÃO é tropeço', () => {
+    const preds = [
+      matchFull(1, 10, 10, 3, 0, 0, 3),
+      matchFull(2,  0,  0, 1, 0, 0, 1),
+    ]
+    expect(findWorstMatch(preds)?.match_id).toBe(2)
+  })
+
+  it('empate em distância → retorna o primeiro (estável)', () => {
+    const preds = [
+      matchFull(1, 0, 0, 1, 1, 0, 0),
+      matchFull(2, 0, 0, 1, 1, 0, 0),
+    ]
+    expect(findWorstMatch(preds)?.match_id).toBe(1)
+  })
+
+  it('único candidato com 0 pts e scores → retorna ele', () => {
+    const preds = [
+      matchFull(1, 0, 0, 2, 1, 0, 0),
+      match(2, 10, 10),
+    ]
+    expect(findWorstMatch(preds)?.match_id).toBe(1)
+  })
+
+  it('array vazio → null', () => {
+    expect(findWorstMatch([])).toBeNull()
   })
 })
 

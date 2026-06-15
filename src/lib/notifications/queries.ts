@@ -94,6 +94,22 @@ export async function getMatchesFinishedToday(): Promise<Match[]> {
     )
 }
 
+export async function getFinishedTodayButUnlocked(): Promise<Match[]> {
+  const today = getTodayBrt()
+  const { start, end } = brtDayRange(today)
+  return db
+    .select()
+    .from(matches)
+    .where(
+      and(
+        eq(matches.status, 'finished'),
+        isNull(matches.result_locked_at),
+        gte(matches.kickoff_at, start),
+        lte(matches.kickoff_at, end)
+      )
+    )
+}
+
 export async function getFinishedMatchesAwaitingSummary(): Promise<Match[]> {
   // 24h defensive limit prevents backfilling old results on cold restarts while
   // covering delayed locks (e.g. lock fires 1-2h after kickoff due to API issues).

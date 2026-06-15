@@ -40,7 +40,7 @@ const TEAMS: Record<string, TeamInfo> = {
   KSA: { name: 'Arábia Saudita',   iso2: 'SA' },
   MAR: { name: 'Marrocos',         iso2: 'MA' },
   MEX: { name: 'México',           iso2: 'MX' },
-  NED: { name: 'Países Baixos',    iso2: 'NL' },
+  NED: { name: 'Holanda',           iso2: 'NL' },
   NOR: { name: 'Noruega',          iso2: 'NO' },
   NZL: { name: 'Nova Zelândia',    iso2: 'NZ' },
   PAN: { name: 'Panamá',           iso2: 'PA' },

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyCronAuth } from '@/lib/cron-auth'
-import { getMatchesFinishedToday, getRankingTopN } from '@/lib/notifications/queries'
+import { getMatchesFinishedToday, getFinishedTodayButUnlocked, getRankingTopN } from '@/lib/notifications/queries'
 import { sendNotification } from '@/lib/notifications/send'
 import { eveningSummaryMessage } from '@/lib/telegram/messages'
 import { env } from '@/lib/env'
@@ -14,6 +14,11 @@ export async function GET(req: NextRequest) {
 
   if (finishedMatches.length === 0) {
     return NextResponse.json({ sent: false, reason: 'no_finished_matches_today' })
+  }
+
+  const pendingLock = await getFinishedTodayButUnlocked()
+  if (pendingLock.length > 0) {
+    return NextResponse.json({ sent: false, reason: 'awaiting_lock', pending: pendingLock.length })
   }
 
   const top3 = await getRankingTopN(3)
