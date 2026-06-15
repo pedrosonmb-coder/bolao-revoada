@@ -9,6 +9,8 @@ export type MyPrediction = {
   away_score: number
   qualified_team_code: string | null
   updated_at: Date | null
+  points_awarded: number | null
+  base_points: number | null
 }
 
 export function useMyPredictions() {

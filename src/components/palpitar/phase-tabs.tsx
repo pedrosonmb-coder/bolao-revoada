@@ -48,6 +48,8 @@ export function PalpitarTabs() {
             away_score: as_,
             qualified_team_code: qtc,
             updated_at: new Date(),
+            points_awarded: null,
+            base_points: null,
           }
           if (existing >= 0) {
             const preds = [...prev.predictions]

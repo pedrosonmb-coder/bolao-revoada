@@ -5,6 +5,7 @@ import { ChevronLeft } from 'lucide-react'
 import { useUserFull } from '@/hooks/use-ranking'
 import { getTeamDisplay } from '@/lib/teams'
 import { Skeleton } from '@/components/ui/skeleton'
+import { pointsColor } from '@/lib/scoring/points-color'
 import type { Distribution, MatchResult } from '@/lib/scoring/full-ranking-helpers'
 import type { MatchEntry } from '@/hooks/use-ranking'
 
@@ -174,12 +175,6 @@ function MatchCard({ match }: { match: MatchResult & { isBest?: boolean } }) {
   )
 }
 
-function pointsColor(base: number): string {
-  if (base === 25) return 'var(--color-accent-primary)'
-  if (base === 18) return 'var(--color-status-success)'
-  if (base >= 10) return '#65A30D'
-  return '#9CA3AF'
-}
 
 function CampanhaRow({ m }: { m: MatchEntry }) {
   const home = getTeamDisplay(m.home_team_code)

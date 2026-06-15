@@ -16,6 +16,8 @@ export async function GET(req: NextRequest) {
       away_score: predictions.away_score,
       qualified_team_code: predictions.qualified_team_code,
       updated_at: predictions.updated_at,
+      points_awarded: predictions.points_awarded,
+      base_points: predictions.base_points,
     })
     .from(predictions)
     .where(eq(predictions.user_id, user.id))

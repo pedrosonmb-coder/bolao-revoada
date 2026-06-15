@@ -10,6 +10,7 @@ import { useToast } from '@/components/ui/toast'
 import { Badge } from '@/components/ui/badge'
 import { getTeamDisplay } from '@/lib/teams'
 import { isMatchTbd } from '@/lib/poll-fixtures/team-sync'
+import { pointsColor } from '@/lib/scoring/points-color'
 import type { Match } from '@/lib/db/schema'
 import type { MyPrediction } from '@/hooks/use-my-predictions'
 
@@ -51,6 +52,10 @@ export function MatchCard({ match, prediction, onSaved, isPaid = true }: MatchCa
   const isDraw = homeScore === awayScore
   const homeDisplay = getTeamDisplay(match.home_team_code)
   const awayDisplay = getTeamDisplay(match.away_team_code)
+  const isScored =
+    match.result_locked_at != null &&
+    prediction?.points_awarded != null &&
+    prediction?.base_points != null
 
   const doSave = useCallback(
     async (hs: number, as_: number, qtc: 'home' | 'away' | null) => {
@@ -98,13 +103,16 @@ export function MatchCard({ match, prediction, onSaved, isPaid = true }: MatchCa
 
   return (
     <div
-      className={`p-4 rounded-xl border transition-all ${
-        isLive
-          ? 'border-(--color-accent-critical) animate-pulse'
+      className={`p-4 rounded-xl border transition-all bg-(--color-bg-base) relative${isLive ? ' animate-pulse' : ''}`}
+      style={{
+        borderColor: isLive
+          ? 'var(--color-accent-critical)'
+          : isScored
+          ? pointsColor(prediction!.base_points!)
           : isSaved
-          ? 'border-(--color-accent-primary)'
-          : 'border-(--color-border-base)'
-      } bg-(--color-bg-base) relative`}
+          ? 'var(--color-accent-primary)'
+          : 'var(--color-border-base)',
+      }}
     >
       {/* Times */}
       <div className="flex items-center justify-between mb-3 gap-2">
@@ -142,6 +150,21 @@ export function MatchCard({ match, prediction, onSaved, isPaid = true }: MatchCa
         <span className="text-(--color-text-secondary) font-bold">×</span>
         <ScoreSelector value={awayScore} onChange={handleAwayChange} disabled={disabled} />
       </div>
+
+      {/* Resultado + pontos (só quando pontuado) */}
+      {isScored && (
+        <div className="mt-3 flex items-center justify-between text-xs text-(--color-text-secondary)">
+          <span>
+            Resultado: {match.home_score}–{match.away_score}
+          </span>
+          <span
+            className="font-[family-name:var(--font-tight)] font-black text-sm"
+            style={{ color: pointsColor(prediction!.base_points!) }}
+          >
+            +{prediction!.points_awarded} pts
+          </span>
+        </div>
+      )}
 
       {/* Classificação no mata-mata com empate */}
       {isKnockout && isDraw && (
