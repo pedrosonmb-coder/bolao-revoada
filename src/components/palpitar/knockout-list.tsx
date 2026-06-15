@@ -1,16 +1,20 @@
 'use client'
 
+import { useState } from 'react'
 import { MatchCard } from './match-card'
 import { ProgressBar } from './progress-bar'
 import type { Match } from '@/lib/db/schema'
 import type { MyPrediction } from '@/hooks/use-my-predictions'
 
-const STAGE_LABELS: Record<string, string> = {
-  r32: '16-avos de final',
-  r16: 'Oitavas de final',
-  qf: 'Quartas de final',
-  sf: 'Semifinais',
-  '3rd': 'Disputa de 3º lugar',
+const STAGE_ORDER = ['r32', 'r16', 'qf', 'sf', '3rd', 'final'] as const
+type Stage = (typeof STAGE_ORDER)[number]
+
+const STAGE_LABELS: Record<Stage, string> = {
+  r32: '16avos',
+  r16: 'Oitavas',
+  qf: 'Quartas',
+  sf: 'Semi',
+  '3rd': '3º',
   final: 'Final',
 }
 
@@ -21,58 +25,88 @@ type KnockoutListProps = {
   isPaid: boolean
 }
 
+function isDefined(m: Match) {
+  return m.home_team_code !== 'TBD' && m.away_team_code !== 'TBD'
+}
+
+function getDefaultStage(matches: Match[]): Stage {
+  for (const stage of STAGE_ORDER) {
+    const hasActive = matches.some(
+      (m) => m.stage === stage && isDefined(m) && m.status !== 'finished'
+    )
+    if (hasActive) return stage
+  }
+  // All TBD → r32; all finished → final
+  return matches.some(isDefined) ? 'final' : 'r32'
+}
+
 export function KnockoutList({ matches, predictionsMap, onSaved, isPaid }: KnockoutListProps) {
-  // Agrupa por stage mantendo ordem
-  const stageOrder = ['r32', 'r16', 'qf', 'sf', '3rd', 'final']
-  const byStage = new Map<string, Match[]>()
+  const [activeStage, setActiveStage] = useState<Stage>(() => getDefaultStage(matches))
+
+  const byStage = new Map<Stage, Match[]>()
+  for (const stage of STAGE_ORDER) byStage.set(stage, [])
   for (const m of matches) {
-    if (!byStage.has(m.stage)) byStage.set(m.stage, [])
-    byStage.get(m.stage)!.push(m)
+    const s = m.stage as Stage
+    if (byStage.has(s)) byStage.get(s)!.push(m)
   }
 
-  // Apenas jogos com times definidos (não TBD)
-  const definedMatches = matches.filter(
-    (m) => m.home_team_code !== 'TBD' && m.away_team_code !== 'TBD'
-  )
-
-  const done = definedMatches.filter((m) => predictionsMap.has(m.id)).length
+  const definedMatches = matches.filter(isDefined)
+  const totalDone = definedMatches.filter((m) => predictionsMap.has(m.id)).length
+  const activeMatches = byStage.get(activeStage) ?? []
 
   return (
     <div>
-      <ProgressBar
-        done={done}
-        total={definedMatches.length}
-        label="Mata-mata"
-      />
+      <ProgressBar done={totalDone} total={definedMatches.length} label="Mata-mata" />
 
-      {matches.length === 0 && (
+      {/* Sub-tabs por fase */}
+      <div className="overflow-x-auto border-b border-(--color-border-base)">
+        <div className="flex min-w-max">
+          {STAGE_ORDER.map((stage) => {
+            const stageMatches = byStage.get(stage) ?? []
+            const defined = stageMatches.filter(isDefined)
+            const stageDone = defined.filter((m) => predictionsMap.has(m.id)).length
+            const counter = defined.length > 0 ? `${stageDone}/${defined.length}` : null
+            const isActive = stage === activeStage
+
+            return (
+              <button
+                key={stage}
+                type="button"
+                onClick={() => setActiveStage(stage)}
+                className={`flex flex-col items-center px-4 py-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap ${
+                  isActive
+                    ? 'border-(--color-accent-primary) text-(--color-accent-primary)'
+                    : 'border-transparent text-(--color-text-secondary) hover:text-(--color-text-primary)'
+                }`}
+              >
+                <span>{STAGE_LABELS[stage]}</span>
+                <span className="text-[10px] mt-0.5 opacity-70">
+                  {counter ?? '—'}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Cards da fase selecionada */}
+      {activeMatches.length === 0 ? (
         <div className="px-4 py-12 text-center text-(--color-text-secondary) text-sm">
           Nenhum jogo nesta fase ainda.
         </div>
-      )}
-
-      <div className="px-4 py-4 space-y-6">
-        {stageOrder
-          .filter((s) => byStage.has(s))
-          .map((stage) => (
-            <div key={stage}>
-              <h3 className="text-xs font-semibold text-(--color-text-secondary) uppercase tracking-wider mb-3">
-                {STAGE_LABELS[stage] ?? stage}
-              </h3>
-              <div className="space-y-3">
-                {byStage.get(stage)!.map((m) => (
-                  <MatchCard
-                    key={m.id}
-                    match={m}
-                    prediction={predictionsMap.get(m.id)}
-                    onSaved={onSaved}
-                    isPaid={isPaid}
-                  />
-                ))}
-              </div>
-            </div>
+      ) : (
+        <div className="px-4 py-4 space-y-3">
+          {activeMatches.map((m) => (
+            <MatchCard
+              key={m.id}
+              match={m}
+              prediction={predictionsMap.get(m.id)}
+              onSaved={onSaved}
+              isPaid={isPaid}
+            />
           ))}
-      </div>
+        </div>
+      )}
     </div>
   )
 }
