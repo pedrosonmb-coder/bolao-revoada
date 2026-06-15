@@ -64,6 +64,10 @@ export async function GET(
     away_team_code: p.away_team_code,
     points_awarded: p.points_awarded,
     base_points: p.base_points,
+    home_score: p.home_score,
+    away_score: p.away_score,
+    palpite_home: p.palpite_home,
+    palpite_away: p.palpite_away,
   }))
 
   const distribution = computeDistribution(predRows)

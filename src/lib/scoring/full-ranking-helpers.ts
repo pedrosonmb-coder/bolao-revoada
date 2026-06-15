@@ -4,6 +4,10 @@ export type MatchResult = {
   away_team_code: string
   points_awarded: number
   base_points: number
+  home_score?: number | null
+  away_score?: number | null
+  palpite_home?: number | null
+  palpite_away?: number | null
 }
 
 export type Distribution = {
@@ -33,7 +37,18 @@ export function findBestMatch(preds: MatchResult[]): MatchResult | null {
 
 export function findWorstMatch(preds: MatchResult[]): MatchResult | null {
   if (preds.length === 0) return null
-  return preds.reduce((worst, p) => (p.points_awarded < worst.points_awarded ? p : worst))
+  const withScores = preds.filter(
+    (p) => p.home_score != null && p.away_score != null && p.palpite_home != null && p.palpite_away != null
+  )
+  if (withScores.length === 0) {
+    // fallback quando placar real não está disponível
+    return preds.reduce((worst, p) => (p.points_awarded < worst.points_awarded ? p : worst))
+  }
+  return withScores.reduce((worst, p) => {
+    const d = Math.abs(p.palpite_home! - p.home_score!) + Math.abs(p.palpite_away! - p.away_score!)
+    const dw = Math.abs(worst.palpite_home! - worst.home_score!) + Math.abs(worst.palpite_away! - worst.away_score!)
+    return d > dw ? p : worst
+  })
 }
 
 export function computeUserAvg(matchPoints: number, matchesPlayed: number): number {

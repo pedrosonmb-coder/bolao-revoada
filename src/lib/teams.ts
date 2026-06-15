@@ -22,7 +22,7 @@ const TEAMS: Record<string, TeamInfo> = {
   COL: { name: 'Colômbia',         iso2: 'CO' },
   CPV: { name: 'Cabo Verde',       iso2: 'CV' },
   CRO: { name: 'Croácia',          iso2: 'HR' },
-  CUR: { name: 'Curaçao',          iso2: 'CW' },
+  CUW: { name: 'Curaçao',          iso2: 'CW' },
   CZE: { name: 'Tchéquia',         iso2: 'CZ' },
   ECU: { name: 'Equador',          iso2: 'EC' },
   EGY: { name: 'Egito',            iso2: 'EG' },
@@ -72,7 +72,10 @@ function computeFlag(iso2: string): string {
 export function getTeamDisplay(tla: string): { name: string; flag: string } {
   const key = tla.toUpperCase()
   const team = TEAMS[key]
-  if (!team) return { name: tla, flag: '🏳️' }
+  if (!team) {
+    console.warn(`[teams] código sem mapeamento: "${tla}"`)
+    return { name: tla, flag: '🏳️' }
+  }
   const flag = SPECIAL_FLAGS[key] ?? computeFlag(team.iso2)
   return { name: team.name, flag }
 }

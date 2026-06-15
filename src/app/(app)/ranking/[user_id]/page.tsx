@@ -140,6 +140,8 @@ function SegmentedBar({ distribution }: { distribution: Distribution }) {
 function MatchCard({ match }: { match: MatchResult & { isBest?: boolean } }) {
   const home = getTeamDisplay(match.home_team_code)
   const away = getTeamDisplay(match.away_team_code)
+  const hasScore = match.home_score != null && match.away_score != null
+  const hasPalpite = match.palpite_home != null && match.palpite_away != null
   return (
     <div className="bg-(--color-bg-surface) rounded-xl p-3">
       <p className="text-xs text-(--color-text-secondary) mb-2">
@@ -154,6 +156,12 @@ function MatchCard({ match }: { match: MatchResult & { isBest?: boolean } }) {
           {away.name} {away.flag}
         </span>
       </div>
+      {hasScore && (
+        <p className="text-xs text-(--color-text-secondary) text-center mt-1">
+          {match.home_score}–{match.away_score}
+          {hasPalpite && <> · palpitou {match.palpite_home}–{match.palpite_away}</>}
+        </p>
+      )}
       <p className="text-center mt-1.5">
         <span
           className="font-[family-name:var(--font-tight)] font-black text-xl"
@@ -263,7 +271,6 @@ export default function UserPerformancePage() {
   const total = distTotal(distribution)
   const accuracyPct = total > 0 ? Math.round((achievements.winners_correct / total) * 100) : 0
   const diff = group_comparison.user_avg_per_match - group_comparison.group_avg_per_match
-  const diffStr = (diff >= 0 ? '+' : '') + fmt(diff) + ' pts/jogo'
 
   return (
     <div className="min-h-screen bg-(--color-bg-base)">
@@ -326,12 +333,15 @@ export default function UserPerformancePage() {
             </p>
           </div>
           <div className="bg-(--color-bg-surface) rounded-xl p-3 text-center">
-            <p className="text-xs text-(--color-text-secondary) mb-1">vs grupo</p>
+            <p className="text-xs text-(--color-text-secondary) mb-1">Média/jogo</p>
+            <p className="font-[family-name:var(--font-tight)] font-black text-xl text-(--color-text-primary)">
+              {fmt(group_comparison.user_avg_per_match)}
+            </p>
             <p
-              className="font-[family-name:var(--font-tight)] font-black text-base leading-tight"
+              className="text-xs mt-0.5 leading-tight"
               style={{ color: diff >= 0 ? 'var(--color-status-success)' : 'var(--color-status-danger)' }}
             >
-              {diffStr}
+              {diff >= 0 ? `+${fmt(diff)}` : fmt(diff)} vs grupo
             </p>
           </div>
         </div>

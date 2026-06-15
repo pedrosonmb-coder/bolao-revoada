@@ -7,12 +7,34 @@ import {
   computeGroupAvg,
 } from '../full-ranking-helpers'
 
+// Factory sem placar real (usado em testes de fallback e de best)
 const match = (id: number, pts: number, base: number) => ({
   match_id: id,
   home_team_code: 'AAA',
   away_team_code: 'BBB',
   points_awarded: pts,
   base_points: base,
+})
+
+// Factory com placar real e palpite (usado em testes de distância)
+const matchFull = (
+  id: number,
+  pts: number,
+  base: number,
+  hs: number,
+  as_: number,
+  ph: number,
+  pa: number
+) => ({
+  match_id: id,
+  home_team_code: 'AAA',
+  away_team_code: 'BBB',
+  points_awarded: pts,
+  base_points: base,
+  home_score: hs,
+  away_score: as_,
+  palpite_home: ph,
+  palpite_away: pa,
 })
 
 describe('computeDistribution', () => {
@@ -80,19 +102,58 @@ describe('findBestMatch', () => {
 })
 
 describe('findWorstMatch', () => {
-  it('retorna o de menor points_awarded', () => {
-    const result = findWorstMatch([match(1, 10, 10), match(2, 50, 25), match(3, 0, 0)])
-    expect(result?.match_id).toBe(3)
-    expect(result?.points_awarded).toBe(0)
+  describe('com placar real (critério de distância)', () => {
+    it('retorna o palpite mais distante do placar real', () => {
+      // id1: dist = |0-1| + |1-0| = 2
+      // id2: dist = |0-3| + |1-0| = 4  ← maior
+      // id3: dist = |1-1| + |1-0| = 1
+      const preds = [
+        matchFull(1, 10, 10, 1, 0, 0, 1),
+        matchFull(2,  0,  0, 3, 0, 0, 1),
+        matchFull(3, 18, 18, 1, 0, 1, 1),
+      ]
+      expect(findWorstMatch(preds)?.match_id).toBe(2)
+    })
+
+    it('empate em distância → retorna o primeiro (estável)', () => {
+      // ambos: dist = |0-1| + |0-1| = 2
+      const preds = [
+        matchFull(1, 10, 10, 1, 1, 0, 0),
+        matchFull(2, 10, 10, 1, 1, 0, 0),
+      ]
+      expect(findWorstMatch(preds)?.match_id).toBe(1)
+    })
+
+    it('ignora preds sem placar real ao calcular distância', () => {
+      // id1 sem placar; id2 com dist=5, id3 com dist=1
+      const preds = [
+        match(1, 0, 0),
+        matchFull(2, 0, 0, 3, 2, 0, 0),  // dist = |0-3| + |0-2| = 5
+        matchFull(3, 10, 10, 1, 0, 0, 1), // dist = |0-1| + |1-0| = 2
+      ]
+      expect(findWorstMatch(preds)?.match_id).toBe(2)
+    })
+
+    it('array vazio → null', () => {
+      expect(findWorstMatch([])).toBeNull()
+    })
   })
 
-  it('todos com 0 → retorna o primeiro (estável)', () => {
-    const result = findWorstMatch([match(1, 0, 0), match(2, 0, 0)])
-    expect(result?.match_id).toBe(1)
-  })
+  describe('sem placar real (fallback para menor points_awarded)', () => {
+    it('retorna o de menor points_awarded quando não há scores', () => {
+      const result = findWorstMatch([match(1, 10, 10), match(2, 50, 25), match(3, 0, 0)])
+      expect(result?.match_id).toBe(3)
+      expect(result?.points_awarded).toBe(0)
+    })
 
-  it('array vazio → null', () => {
-    expect(findWorstMatch([])).toBeNull()
+    it('todos com 0 pts → retorna o primeiro (estável)', () => {
+      const result = findWorstMatch([match(1, 0, 0), match(2, 0, 0)])
+      expect(result?.match_id).toBe(1)
+    })
+
+    it('array vazio → null', () => {
+      expect(findWorstMatch([])).toBeNull()
+    })
   })
 })
 
