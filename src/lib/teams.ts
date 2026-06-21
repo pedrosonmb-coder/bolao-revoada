@@ -54,7 +54,8 @@ const TEAMS: Record<string, TeamInfo> = {
   SWE: { name: 'Suécia',           iso2: 'SE' },
   TUN: { name: 'Tunísia',          iso2: 'TN' },
   TUR: { name: 'Turquia',          iso2: 'TR' },
-  URY: { name: 'Uruguai',          iso2: 'UY' },
+  URU: { name: 'Uruguai',          iso2: 'UY' }, // alias — football-data.org usa URU nos jogos futuros
+  URY: { name: 'Uruguai',          iso2: 'UY' }, // mantido — match_id=15 já gravado usa URY
   USA: { name: 'EUA',              iso2: 'US' },
   UZB: { name: 'Uzbequistão',      iso2: 'UZ' },
 }

@@ -19,6 +19,7 @@ export async function GET(req: NextRequest) {
       away_team_code: matches.away_team_code,
       away_team_name: matches.away_team_name,
       kickoff_at: matches.kickoff_at,
+      stage: matches.stage,
       status: matches.status,
       predictions_close_at: matches.predictions_close_at,
       pred_home_score: predictions.home_score,
@@ -39,6 +40,7 @@ export async function GET(req: NextRequest) {
     away_team_code: r.away_team_code,
     away_team_name: r.away_team_name,
     kickoff_at: r.kickoff_at,
+    stage: r.stage,
     status: r.status,
     window_open: r.predictions_close_at > now,
     user_prediction:

@@ -11,6 +11,7 @@ export type UpcomingMatch = {
   away_team_code: string
   away_team_name: string
   kickoff_at: string | Date | number
+  stage: string
   status: string
   window_open: boolean
   user_prediction: { home_score: number; away_score: number } | null
@@ -46,8 +47,9 @@ export function UpcomingMatchRow({ match }: { match: UpcomingMatch }) {
   )
 
   if (isClickable) {
+    const tab = match.stage === 'group' ? 'grupos' : 'matamat'
     return (
-      <Link href="/palpitar" className="block">
+      <Link href={`/palpitar?tab=${tab}`} className="block">
         {inner}
       </Link>
     )

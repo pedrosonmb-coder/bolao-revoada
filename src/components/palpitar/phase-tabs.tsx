@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import { useSearchParams } from 'next/navigation'
 import useSWR from 'swr'
 import { swrFetcher } from '@/lib/api/client'
 import { useMatches } from '@/hooks/use-matches'
@@ -22,8 +23,13 @@ type TabId = (typeof TABS)[number]['id']
 
 const KNOCKOUT_STAGES = ['r32', 'r16', 'qf', 'sf', '3rd', 'final']
 
+const VALID_TABS = new Set<TabId>(['torneio', 'grupos', 'matamat'])
+
 export function PalpitarTabs() {
-  const [activeTab, setActiveTab] = useState<TabId>('grupos')
+  const searchParams = useSearchParams()
+  const tabParam = searchParams.get('tab') as TabId | null
+  const initialTab: TabId = tabParam && VALID_TABS.has(tabParam) ? tabParam : 'grupos'
+  const [activeTab, setActiveTab] = useState<TabId>(initialTab)
 
   const { matches: allMatches, isLoading: loadingMatches } = useMatches()
   const { predictionsMap, mutate } = useMyPredictions()
