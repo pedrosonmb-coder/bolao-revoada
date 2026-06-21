@@ -6,8 +6,9 @@ import { useUserFull } from '@/hooks/use-ranking'
 import { getTeamDisplay } from '@/lib/teams'
 import { Skeleton } from '@/components/ui/skeleton'
 import { pointsColor } from '@/lib/scoring/points-color'
+import { toChartPoints, xLabelStep } from '@/lib/scoring/position-chart'
 import type { Distribution, MatchResult } from '@/lib/scoring/full-ranking-helpers'
-import type { MatchEntry } from '@/hooks/use-ranking'
+import type { MatchEntry, PositionPoint } from '@/hooks/use-ranking'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -176,6 +177,95 @@ function MatchCard({ match }: { match: MatchResult & { isBest?: boolean } }) {
 }
 
 
+function fmtSnapshotDate(d: string): string {
+  const [, month, day] = d.split('-')
+  return `${day}/${month}`
+}
+
+function PositionChart({ history }: { history: PositionPoint[] }) {
+  if (history.length < 2) return null
+
+  const pts = toChartPoints(history)
+  const positions = history.map((p) => p.position)
+  const minPos = Math.min(...positions)
+  const maxPos = Math.max(...positions)
+  const last = pts[pts.length - 1]
+  const step = xLabelStep(pts.length)
+
+  const polyline = pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
+
+  return (
+    <svg
+      viewBox="0 0 300 120"
+      width="100%"
+      style={{ display: 'block', overflow: 'visible' }}
+      aria-label="Gráfico de evolução de posição no ranking"
+    >
+      {/* Grid lines */}
+      <line x1="28" y1="14" x2="264" y2="14" stroke="var(--color-border-base)" strokeWidth="0.5" strokeDasharray="3 3" />
+      {minPos !== maxPos && (
+        <line x1="28" y1="96" x2="264" y2="96" stroke="var(--color-border-base)" strokeWidth="0.5" strokeDasharray="3 3" />
+      )}
+
+      {/* Y axis labels */}
+      <text x="22" y="18" textAnchor="end" fontSize="9" fill="var(--color-text-secondary)">{minPos}º</text>
+      {minPos !== maxPos && (
+        <text x="22" y="100" textAnchor="end" fontSize="9" fill="var(--color-text-secondary)">{maxPos}º</text>
+      )}
+
+      {/* X axis date labels */}
+      {pts.map((p, i) => {
+        const isLast = i === pts.length - 1
+        if (i % step !== 0 && !isLast) return null
+        return (
+          <text
+            key={p.date}
+            x={p.x.toFixed(1)}
+            y="116"
+            textAnchor="middle"
+            fontSize="8"
+            fill="var(--color-text-secondary)"
+          >
+            {fmtSnapshotDate(p.date)}
+          </text>
+        )
+      })}
+
+      {/* Line */}
+      <polyline
+        points={polyline}
+        fill="none"
+        stroke="var(--color-accent-primary)"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+
+      {/* Dots */}
+      {pts.map((p) => (
+        <circle
+          key={p.date}
+          cx={p.x.toFixed(1)}
+          cy={p.y.toFixed(1)}
+          r="3"
+          fill="var(--color-accent-primary)"
+        />
+      ))}
+
+      {/* Current position label */}
+      <text
+        x={(last.x + 7).toFixed(1)}
+        y={(last.y + 4).toFixed(1)}
+        fontSize="10"
+        fontWeight="bold"
+        fill="var(--color-accent-primary)"
+      >
+        {last.position}º
+      </text>
+    </svg>
+  )
+}
+
 function CampanhaRow({ m }: { m: MatchEntry }) {
   const home = getTeamDisplay(m.home_team_code)
   const away = getTeamDisplay(m.away_team_code)
@@ -262,7 +352,7 @@ export default function UserPerformancePage() {
     )
   }
 
-  const { user, totals, achievements, distribution, best_match, worst_match, group_comparison, matches } = data
+  const { user, totals, achievements, distribution, best_match, worst_match, group_comparison, matches, position_history } = data
   const total = distTotal(distribution)
   const accuracyPct = total > 0 ? Math.round((achievements.winners_correct / total) * 100) : 0
   const diff = group_comparison.user_avg_per_match - group_comparison.group_avg_per_match
@@ -348,6 +438,16 @@ export default function UserPerformancePage() {
           </p>
           <SegmentedBar distribution={distribution} />
         </div>
+
+        {/* ----------------------------------------- EVOLUÇÃO NO RANKING */}
+        {position_history.length >= 2 && (
+          <div className="bg-(--color-bg-surface) rounded-xl p-4">
+            <p className="text-xs font-semibold text-(--color-text-secondary) uppercase tracking-wide mb-3">
+              Evolução no ranking
+            </p>
+            <PositionChart history={position_history} />
+          </div>
+        )}
 
         {/* ----------------------------------------------- MELHOR / PIOR */}
         {(best_match || worst_match) && (

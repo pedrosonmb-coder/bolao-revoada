@@ -21,12 +21,15 @@ export type MatchEntry = {
   base_points: number
 }
 
+export type PositionPoint = { date: string; position: number; points: number }
+
 export type UserFull = UserDetail & {
   matches: MatchEntry[]
   distribution: Distribution
   best_match: MatchResult | null
   worst_match: MatchResult | null
   group_comparison: { user_avg_per_match: number; group_avg_per_match: number }
+  position_history: PositionPoint[]
 }
 
 export function useRanking() {

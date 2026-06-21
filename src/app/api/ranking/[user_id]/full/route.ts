@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { eq, and, isNotNull, avg } from 'drizzle-orm'
+import { eq, and, isNotNull, avg, asc } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { predictions, matches, users } from '@/lib/db/schema'
+import { predictions, matches, users, rankingSnapshots } from '@/lib/db/schema'
 import { requireUser } from '@/lib/server/auth'
 import { getUserDetail } from '@/lib/scoring/ranking'
 import {
@@ -26,7 +26,7 @@ export async function GET(
     return NextResponse.json({ error: 'user_id inválido' }, { status: 400 })
   }
 
-  const [detail, predRows, groupAvgRow] = await Promise.all([
+  const [detail, predRows, groupAvgRow, snapshotRows] = await Promise.all([
     getUserDetail(userId),
     db
       .select({
@@ -52,6 +52,15 @@ export async function GET(
       .innerJoin(users, eq(predictions.user_id, users.id))
       .where(and(isNotNull(predictions.computed_at), eq(users.is_active, true)))
       .get(),
+    db
+      .select({
+        date: rankingSnapshots.snapshot_date,
+        position: rankingSnapshots.position,
+        points: rankingSnapshots.total_points,
+      })
+      .from(rankingSnapshots)
+      .where(eq(rankingSnapshots.user_id, userId))
+      .orderBy(asc(rankingSnapshots.snapshot_date)),
   ])
 
   if (!detail) {
@@ -102,5 +111,6 @@ export async function GET(
       user_avg_per_match: user_avg,
       group_avg_per_match: group_avg,
     },
+    position_history: snapshotRows,
   })
 }
