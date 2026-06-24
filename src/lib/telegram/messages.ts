@@ -264,6 +264,18 @@ export function phaseOpenMessage(stage: string, closesAt: Date): string {
   return `Palpites das ${label} abertos. Fecha em ${closes}. Quem não palpitar fica de fora.`
 }
 
+export function phaseChampionMessage(
+  block: 'group' | 'knockout',
+  names: string[],
+  points: number
+): string {
+  const nameStr = names.join(' e ')
+  if (block === 'group') {
+    return `🏆 Fase de grupos encerrada! Campeão da fase: ${nameStr} com ${points} pts. Parabéns!`
+  }
+  return `🏆 Eliminatórias encerradas! Campeão do mata-mata: ${nameStr} com ${points} pts. Parabéns!`
+}
+
 export function reconciliationAlertMessage(
   matchId: number,
   home: string,

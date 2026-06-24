@@ -11,6 +11,7 @@ import { isPlausibleSnapshot, selectConsensusSnapshots } from './data-sources/va
 import { recalculateMatchPredictions } from './scoring/recalculate-match-predictions'
 import { retryRecalculate } from './recalculate-retry'
 import { checkAndNotifyPhaseOpen } from './notifications/phase-open'
+import { checkAndNotifyPhaseChampion } from './notifications/phase-champion'
 import { alertAdminConflict } from './notifications/admin-alert'
 import { computeLockDecision, LOCK_THRESHOLD } from './reconciliation-lock'
 import { deriveQualifiedTeamCode } from './scoring/derive-qualified'
@@ -261,6 +262,10 @@ export async function applyReconciliation(
     if (lockedMatch) {
       checkAndNotifyPhaseOpen(lockedMatch).catch((err) =>
         console.error(`[reconciliation] falha ao verificar phase-open para match ${matchId}:`, err)
+      )
+      // Best-effort: champion notification must never derrubar o lock
+      checkAndNotifyPhaseChampion(lockedMatch).catch((err) =>
+        console.error(`[reconciliation] falha ao verificar phase-champion para match ${matchId}:`, err)
       )
     }
   }

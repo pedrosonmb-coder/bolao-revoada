@@ -12,6 +12,7 @@ export type NotificationType =
   | 'predictions_revealed'
   | 'stale_match_alert'
   | 'stale_unscored_alert'
+  | 'phase_champion'
 
 export type SendOptions = {
   type: NotificationType
