@@ -1,28 +1,31 @@
 import { db } from '@/lib/db'
-import { users, predictions, tournamentPredictions } from '@/lib/db/schema'
+import { users, predictions, tournamentPredictions, matches } from '@/lib/db/schema'
 import { eq, isNotNull, and } from 'drizzle-orm'
+import type { Match } from '@/lib/db/schema'
 import { getDisplayName } from '@/lib/display-name'
+import { buildPhaseRankingEntries } from './ranking-phase-builder'
 
-export type RankingEntry = {
-  user_id: number
-  telegram_id: number
-  name: string
-  photo_url: string | null
-  total_points: number
-  match_points: number
-  tournament_points: number
-  exact_scores: number
-  winners_correct: number
-  position: number
-  prev_position: number | null
-}
+// RankingEntry is canonical in ranking-phase-builder; re-exported here for
+// backward compat (all existing importers use '@/lib/scoring/ranking').
+export type { RankingEntry } from './ranking-phase-builder'
+import type { RankingEntry } from './ranking-phase-builder'
 
-export async function getRanking(): Promise<RankingEntry[]> {
+export async function getRanking(stages?: string[]): Promise<RankingEntry[]> {
   const activeUsers = await db
     .select()
     .from(users)
     .where(eq(users.is_active, true))
 
+  if (stages) {
+    const [allPredictions, allMatchRows] = await Promise.all([
+      db.select().from(predictions).where(isNotNull(predictions.computed_at)),
+      db.select({ id: matches.id, stage: matches.stage }).from(matches),
+    ])
+    const matchStageById = new Map(allMatchRows.map((m) => [m.id, m.stage]))
+    return buildPhaseRankingEntries(activeUsers, allPredictions, matchStageById, stages)
+  }
+
+  // Global ranking — behavior identical to before
   const [allPredictions, allTournamentPreds] = await Promise.all([
     db.select().from(predictions).where(isNotNull(predictions.computed_at)),
     db.select().from(tournamentPredictions),
@@ -125,10 +128,8 @@ export async function getUserDetail(userId: number): Promise<UserDetail | null> 
     .from(predictions)
     .where(and(eq(predictions.user_id, userId), isNotNull(predictions.computed_at)))
 
-  // Import matches to get stage info
-  const { matches } = await import('@/lib/db/schema')
   const allMatches = await db.select().from(matches)
-  const matchById = new Map(allMatches.map((m) => [m.id, m]))
+  const matchById = new Map(allMatches.map((m: Match) => [m.id, m]))
 
   const byStage = new Map<string, { points: number; matches_played: number; correct: number }>()
   for (const p of userPreds) {

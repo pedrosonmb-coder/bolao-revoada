@@ -7,6 +7,25 @@ import { UserDetailDrawer } from './user-detail-drawer'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Skeleton } from '@/components/ui/skeleton'
 
+type TabId = 'geral' | 'grupos' | 'matamat' | 'r32' | 'r16' | 'qf' | 'sf' | 'final'
+
+type TabDef = {
+  id: TabId
+  label: string
+  stages: string[] | undefined
+}
+
+const TABS: TabDef[] = [
+  { id: 'geral',   label: 'Geral',     stages: undefined },
+  { id: 'grupos',  label: 'Grupos',    stages: ['group'] },
+  { id: 'matamat', label: 'Mata-mata', stages: ['r32', 'r16', 'qf', 'sf', '3rd', 'final'] },
+  { id: 'r32',     label: '16avos',    stages: ['r32'] },
+  { id: 'r16',     label: 'Oitavas',   stages: ['r16'] },
+  { id: 'qf',      label: 'Quartas',   stages: ['qf'] },
+  { id: 'sf',      label: 'Semi',      stages: ['sf'] },
+  { id: 'final',   label: 'Final',     stages: ['final'] },
+]
+
 function MedalIcon({ position }: { position: number }) {
   if (position > 3) return null
   const colors = ['#FFD700', '#C0C0C0', '#CD7F32']
@@ -31,7 +50,7 @@ function MedalIcon({ position }: { position: number }) {
 
 function PositionDelta({ current, prev }: { current: number; prev: number | null }) {
   if (prev === null) return null
-  const delta = prev - current // positivo = subiu (posição menor = melhor)
+  const delta = prev - current
   if (delta === 0) return null
   const up = delta > 0
   return (
@@ -45,101 +64,136 @@ function PositionDelta({ current, prev }: { current: number; prev: number | null
 
 export function RankingScreen() {
   const { user: me } = useTelegram()
-  const { data, isLoading } = useRanking()
+  const [activeTab, setActiveTab] = useState<TabId>('geral')
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null)
 
+  const activeTabDef = TABS.find((t) => t.id === activeTab)!
+  const { data, isLoading } = useRanking(activeTabDef.stages)
+
   const ranking = data?.ranking ?? []
+  const isPhaseFilter = activeTab !== 'geral'
   const allZero = ranking.every((e) => e.total_points === 0)
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6">
-      {allZero && (
-        <div className="bg-(--color-bg-surface) rounded-xl p-4 mb-6 text-center">
-          <p className="text-sm text-(--color-text-secondary)">
-            Pontuação será calculada quando a Copa começar. Por enquanto, todos com 0 pontos.
-          </p>
-        </div>
-      )}
-
-      {isLoading ? (
-        <div className="space-y-2">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-14 rounded-xl" />
-          ))}
-        </div>
-      ) : ranking.length === 0 ? (
-        <EmptyState title="Calmo aqui." description="Já já enche." />
-      ) : (
-        <div className="space-y-2">
-          {ranking.map((entry) => {
-            const isMe = entry.telegram_id === me?.telegram_id
-            const isTop3 = entry.position <= 3
-
+    <div className="max-w-2xl mx-auto">
+      {/* Sub-tabs */}
+      <div className="overflow-x-auto border-b border-(--color-border-base)">
+        <div className="flex min-w-max">
+          {TABS.map((tab) => {
+            const isActive = tab.id === activeTab
             return (
               <button
-                key={entry.user_id}
+                key={tab.id}
                 type="button"
-                className={`w-full flex items-center gap-3 p-3 rounded-xl text-left transition-opacity active:opacity-70 ${
-                  isMe
-                    ? 'bg-(--color-accent-primary) text-white'
-                    : 'bg-(--color-bg-surface)'
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-4 py-2.5 text-xs font-medium border-b-2 transition-colors whitespace-nowrap ${
+                  isActive
+                    ? 'border-(--color-accent-primary) text-(--color-accent-primary)'
+                    : 'border-transparent text-(--color-text-secondary) hover:text-(--color-text-primary)'
                 }`}
-                onClick={() => setSelectedUserId(entry.user_id)}
               >
-                <span className="w-6 flex items-center justify-center shrink-0">
-                  {isTop3 ? (
-                    <MedalIcon position={entry.position} />
-                  ) : (
-                    <span
-                      className={`font-[family-name:var(--font-tight)] font-black text-lg ${
-                        isMe ? 'text-white' : 'text-(--color-text-secondary)'
-                      }`}
-                    >
-                      {entry.position}
-                    </span>
-                  )}
-                </span>
-
-                {entry.photo_url ? (
-                  <img
-                    src={entry.photo_url}
-                    alt={entry.name}
-                    className="w-9 h-9 rounded-full object-cover"
-                  />
-                ) : (
-                  <div
-                    className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm ${
-                      isMe
-                        ? 'bg-white/20 text-white'
-                        : 'bg-(--color-bg-base) text-(--color-text-primary)'
-                    }`}
-                  >
-                    {entry.name[0]}
-                  </div>
-                )}
-
-                <span
-                  className={`flex-1 text-sm font-medium ${
-                    isMe ? 'text-white' : 'text-(--color-text-primary)'
-                  }`}
-                >
-                  {entry.name}
-                </span>
-
-                <PositionDelta current={entry.position} prev={entry.prev_position} />
-
-                <span
-                  className={`font-[family-name:var(--font-tight)] font-bold text-sm ${
-                    isMe ? 'text-white' : 'text-(--color-text-primary)'
-                  }`}
-                >
-                  {entry.total_points} pts
-                </span>
+                {tab.label}
               </button>
             )
           })}
         </div>
-      )}
+      </div>
+
+      <div className="px-4 py-6">
+        {!isPhaseFilter && allZero && (
+          <div className="bg-(--color-bg-surface) rounded-xl p-4 mb-6 text-center">
+            <p className="text-sm text-(--color-text-secondary)">
+              Pontuação será calculada quando a Copa começar. Por enquanto, todos com 0 pontos.
+            </p>
+          </div>
+        )}
+
+        {isLoading ? (
+          <div className="space-y-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-14 rounded-xl" />
+            ))}
+          </div>
+        ) : isPhaseFilter && allZero ? (
+          <EmptyState
+            title="Ainda não começou."
+            description="Nenhum jogo desta fase foi pontuado ainda."
+          />
+        ) : ranking.length === 0 ? (
+          <EmptyState title="Calmo aqui." description="Já já enche." />
+        ) : (
+          <div className="space-y-2">
+            {ranking.map((entry) => {
+              const isMe = entry.telegram_id === me?.telegram_id
+              const isTop3 = entry.position <= 3
+
+              return (
+                <button
+                  key={entry.user_id}
+                  type="button"
+                  className={`w-full flex items-center gap-3 p-3 rounded-xl text-left transition-opacity active:opacity-70 ${
+                    isMe
+                      ? 'bg-(--color-accent-primary) text-white'
+                      : 'bg-(--color-bg-surface)'
+                  }`}
+                  onClick={() => setSelectedUserId(entry.user_id)}
+                >
+                  <span className="w-6 flex items-center justify-center shrink-0">
+                    {isTop3 ? (
+                      <MedalIcon position={entry.position} />
+                    ) : (
+                      <span
+                        className={`font-[family-name:var(--font-tight)] font-black text-lg ${
+                          isMe ? 'text-white' : 'text-(--color-text-secondary)'
+                        }`}
+                      >
+                        {entry.position}
+                      </span>
+                    )}
+                  </span>
+
+                  {entry.photo_url ? (
+                    <img
+                      src={entry.photo_url}
+                      alt={entry.name}
+                      className="w-9 h-9 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div
+                      className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm ${
+                        isMe
+                          ? 'bg-white/20 text-white'
+                          : 'bg-(--color-bg-base) text-(--color-text-primary)'
+                      }`}
+                    >
+                      {entry.name[0]}
+                    </div>
+                  )}
+
+                  <span
+                    className={`flex-1 text-sm font-medium ${
+                      isMe ? 'text-white' : 'text-(--color-text-primary)'
+                    }`}
+                  >
+                    {entry.name}
+                  </span>
+
+                  {/* PositionDelta only meaningful in Geral (phase ranking has prev_position=null) */}
+                  <PositionDelta current={entry.position} prev={entry.prev_position} />
+
+                  <span
+                    className={`font-[family-name:var(--font-tight)] font-bold text-sm ${
+                      isMe ? 'text-white' : 'text-(--color-text-primary)'
+                    }`}
+                  >
+                    {entry.total_points} pts
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        )}
+      </div>
 
       <UserDetailDrawer
         userId={selectedUserId}

@@ -32,8 +32,11 @@ export type UserFull = UserDetail & {
   position_history: PositionPoint[]
 }
 
-export function useRanking() {
-  return useSWR<RankingResponse>('/api/ranking', swrFetcher, {
+export function useRanking(stages?: string[]) {
+  const url = stages?.length
+    ? `/api/ranking?stages=${stages.join(',')}`
+    : '/api/ranking'
+  return useSWR<RankingResponse>(url, swrFetcher, {
     refreshInterval: 30000,
     revalidateOnFocus: true,
   })
