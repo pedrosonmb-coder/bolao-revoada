@@ -352,7 +352,7 @@ export default function UserPerformancePage() {
     )
   }
 
-  const { user, totals, achievements, distribution, best_match, worst_match, group_comparison, matches, position_history } = data
+  const { user, totals, achievements, distribution, best_match, worst_match, group_comparison, matches, position_history, badges } = data
   const total = distTotal(distribution)
   const accuracyPct = total > 0 ? Math.round((achievements.winners_correct / total) * 100) : 0
   const diff = group_comparison.user_avg_per_match - group_comparison.group_avg_per_match
@@ -446,6 +446,29 @@ export default function UserPerformancePage() {
               Evolução no ranking
             </p>
             <PositionChart history={position_history} />
+          </div>
+        )}
+
+        {/* -------------------------------------------------- CONQUISTAS */}
+        {badges.length > 0 && (
+          <div className="bg-(--color-bg-surface) rounded-xl p-4">
+            <p className="text-xs font-semibold text-(--color-text-secondary) uppercase tracking-wide mb-3">
+              Conquistas
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {badges.map((b) => (
+                <div
+                  key={b.id}
+                  className="flex items-center gap-1.5 rounded-full border border-(--color-border-base) px-3 py-1.5"
+                  style={{ background: 'rgba(255,215,0,0.10)', borderColor: 'rgba(255,215,0,0.35)' }}
+                >
+                  <span aria-hidden>🏆</span>
+                  <span className="text-sm font-semibold" style={{ color: '#92700A' }}>
+                    {b.label}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

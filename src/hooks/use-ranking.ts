@@ -4,6 +4,9 @@ import useSWR from 'swr'
 import { swrFetcher } from '@/lib/api/client'
 import type { RankingEntry, UserDetail } from '@/lib/scoring/ranking'
 import type { Distribution, MatchResult } from '@/lib/scoring/full-ranking-helpers'
+import type { BadgeEntry } from '@/lib/scoring/badges'
+
+export type { BadgeEntry }
 
 type RankingResponse = {
   ranking: RankingEntry[]
@@ -33,6 +36,7 @@ export type UserFull = UserDetail & {
   worst_match: MatchResult | null
   group_comparison: { user_avg_per_match: number; group_avg_per_match: number }
   position_history: PositionPoint[]
+  badges: BadgeEntry[]
 }
 
 export function useRanking(stages?: string[]) {

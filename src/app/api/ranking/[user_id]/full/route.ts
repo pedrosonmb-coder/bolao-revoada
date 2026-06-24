@@ -11,6 +11,7 @@ import {
   computeUserAvg,
   computeGroupAvg,
 } from '@/lib/scoring/full-ranking-helpers'
+import { computeUserBadges } from '@/lib/scoring/badges'
 
 export async function GET(
   req: NextRequest,
@@ -26,7 +27,7 @@ export async function GET(
     return NextResponse.json({ error: 'user_id inválido' }, { status: 400 })
   }
 
-  const [detail, predRows, groupAvgRow, snapshotRows] = await Promise.all([
+  const [detail, predRows, groupAvgRow, snapshotRows, badges] = await Promise.all([
     getUserDetail(userId),
     db
       .select({
@@ -61,6 +62,7 @@ export async function GET(
       .from(rankingSnapshots)
       .where(eq(rankingSnapshots.user_id, userId))
       .orderBy(asc(rankingSnapshots.snapshot_date)),
+    computeUserBadges(userId),
   ])
 
   if (!detail) {
@@ -112,5 +114,6 @@ export async function GET(
       group_avg_per_match: group_avg,
     },
     position_history: snapshotRows,
+    badges,
   })
 }
