@@ -114,13 +114,55 @@ export function RankingScreen() {
               <Skeleton key={i} className="h-14 rounded-xl" />
             ))}
           </div>
-        ) : isPhaseFilter && allZero ? (
-          <EmptyState
-            title="Ainda não começou."
-            description="Nenhum jogo desta fase foi pontuado ainda."
-          />
         ) : ranking.length === 0 ? (
           <EmptyState title="Calmo aqui." description="Já já enche." />
+        ) : isPhaseFilter && allZero ? (
+          // Fase sem dados: lista alfabética sem posições ou medalhas
+          <div>
+            <p className="text-xs text-(--color-text-secondary) mb-3">
+              A fase ainda não começou
+            </p>
+            <div className="space-y-2">
+              {[...ranking]
+                .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
+                .map((entry) => {
+                  const isMe = entry.telegram_id === me?.telegram_id
+                  return (
+                    <button
+                      key={entry.user_id}
+                      type="button"
+                      className={`w-full flex items-center gap-3 p-3 rounded-xl text-left transition-opacity active:opacity-70 ${
+                        isMe ? 'bg-(--color-accent-primary) text-white' : 'bg-(--color-bg-surface)'
+                      }`}
+                      onClick={() => setSelectedUserId(entry.user_id)}
+                    >
+                      {/* Espaço reservado no lugar do número/medalha — sem número */}
+                      <span className="w-6 shrink-0" />
+
+                      {entry.photo_url ? (
+                        <img src={entry.photo_url} alt={entry.name} className="w-9 h-9 rounded-full object-cover" />
+                      ) : (
+                        <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm ${
+                          isMe ? 'bg-white/20 text-white' : 'bg-(--color-bg-base) text-(--color-text-primary)'
+                        }`}>
+                          {entry.name[0]}
+                        </div>
+                      )}
+
+                      <span className={`flex-1 text-sm font-medium ${isMe ? 'text-white' : 'text-(--color-text-primary)'}`}>
+                        {entry.name}
+                      </span>
+
+                      <span className={`font-[family-name:var(--font-tight)] font-bold text-sm ${
+                        isMe ? 'text-white/60' : 'text-(--color-text-secondary)'
+                      }`}>
+                        0 pts
+                      </span>
+                    </button>
+                  )
+                })}
+            </div>
+          </div>
         ) : (
           <div className="space-y-2">
             {ranking.map((entry) => {
