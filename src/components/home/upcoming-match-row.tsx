@@ -49,7 +49,7 @@ export function UpcomingMatchRow({ match }: { match: UpcomingMatch }) {
   if (isClickable) {
     const tab = match.stage === 'group' ? 'grupos' : 'matamat'
     return (
-      <Link href={`/palpitar?tab=${tab}`} className="block">
+      <Link href={`/palpitar?tab=${tab}&match=${match.id}`} className="block">
         {inner}
       </Link>
     )

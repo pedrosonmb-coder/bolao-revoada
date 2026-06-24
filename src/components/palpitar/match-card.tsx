@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { Check, Lock } from 'lucide-react'
 import { ScoreSelector } from './score-selector'
 import { ClassificationSelector } from './classification-selector'
@@ -19,6 +19,7 @@ type MatchCardProps = {
   prediction?: MyPrediction
   onSaved?: (matchId: number, homeScore: number, awayScore: number, qtc: string | null) => void
   isPaid?: boolean
+  targetMatchId?: number
 }
 
 function formatKickoff(date: Date | string): string {
@@ -33,8 +34,17 @@ function formatKickoff(date: Date | string): string {
   }).format(d)
 }
 
-export function MatchCard({ match, prediction, onSaved, isPaid = true }: MatchCardProps) {
+export function MatchCard({ match, prediction, onSaved, isPaid = true, targetMatchId }: MatchCardProps) {
   const { toast } = useToast()
+  const isTarget = match.id === targetMatchId
+  const [highlighted, setHighlighted] = useState(isTarget)
+
+  useEffect(() => {
+    if (!isTarget) return
+    const t = setTimeout(() => setHighlighted(false), 2000)
+    return () => clearTimeout(t)
+  }, [isTarget])
+
   const now = new Date()
   const isClosed = now >= new Date(match.predictions_close_at)
   const isLive = match.status === 'live'
@@ -103,6 +113,7 @@ export function MatchCard({ match, prediction, onSaved, isPaid = true }: MatchCa
 
   return (
     <div
+      id={`match-${match.id}`}
       className={`p-4 rounded-xl border transition-all bg-(--color-bg-base) relative${isLive ? ' animate-pulse' : ''}`}
       style={{
         borderColor: isLive
@@ -112,6 +123,8 @@ export function MatchCard({ match, prediction, onSaved, isPaid = true }: MatchCa
           : isSaved
           ? 'var(--color-accent-primary)'
           : 'var(--color-border-base)',
+        outline: highlighted ? '2px solid var(--color-accent-primary)' : undefined,
+        outlineOffset: '3px',
       }}
     >
       {/* Times */}

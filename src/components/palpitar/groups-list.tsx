@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { MatchCard } from './match-card'
 import { ProgressBar } from './progress-bar'
@@ -12,9 +12,22 @@ type GroupsListProps = {
   predictionsMap: Map<number, MyPrediction>
   onSaved?: (matchId: number, hs: number, as_: number, qtc: string | null) => void
   isPaid: boolean
+  targetMatchId?: number
 }
 
-export function GroupsList({ matches, predictionsMap, onSaved, isPaid }: GroupsListProps) {
+export function GroupsList({ matches, predictionsMap, onSaved, isPaid, targetMatchId }: GroupsListProps) {
+  const targetGroup = targetMatchId
+    ? (matches.find((m) => m.id === targetMatchId)?.group_name ?? null)
+    : null
+
+  useEffect(() => {
+    if (!targetMatchId) return
+    const t = setTimeout(() => {
+      document.getElementById(`match-${targetMatchId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, 150)
+    return () => clearTimeout(t)
+  }, [targetMatchId])
+
   // Agrupa por group_name
   const groups = new Map<string, Match[]>()
   for (const m of matches) {
@@ -51,6 +64,8 @@ export function GroupsList({ matches, predictionsMap, onSaved, isPaid }: GroupsL
             predictionsMap={predictionsMap}
             onSaved={onSaved}
             isPaid={isPaid}
+            initialOpen={groupName === targetGroup}
+            targetMatchId={targetMatchId}
           />
         ))}
       </div>
@@ -64,10 +79,12 @@ type GroupAccordionProps = {
   predictionsMap: Map<number, MyPrediction>
   onSaved?: (matchId: number, hs: number, as_: number, qtc: string | null) => void
   isPaid: boolean
+  initialOpen?: boolean
+  targetMatchId?: number
 }
 
-function GroupAccordion({ groupName, matches, predictionsMap, onSaved, isPaid }: GroupAccordionProps) {
-  const [open, setOpen] = useState(false)
+function GroupAccordion({ groupName, matches, predictionsMap, onSaved, isPaid, initialOpen = false, targetMatchId }: GroupAccordionProps) {
+  const [open, setOpen] = useState(initialOpen)
   const done = matches.filter((m) => predictionsMap.has(m.id)).length
 
   return (
@@ -98,6 +115,7 @@ function GroupAccordion({ groupName, matches, predictionsMap, onSaved, isPaid }:
               prediction={predictionsMap.get(m.id)}
               onSaved={onSaved}
               isPaid={isPaid}
+              targetMatchId={targetMatchId}
             />
           ))}
         </div>

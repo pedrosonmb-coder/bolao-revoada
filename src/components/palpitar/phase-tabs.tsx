@@ -31,6 +31,9 @@ export function PalpitarTabs() {
   const initialTab: TabId = tabParam && VALID_TABS.has(tabParam) ? tabParam : 'grupos'
   const [activeTab, setActiveTab] = useState<TabId>(initialTab)
 
+  const matchParam = searchParams.get('match')
+  const targetMatchId = matchParam && /^\d+$/.test(matchParam) ? Number(matchParam) : null
+
   const { matches: allMatches, isLoading: loadingMatches } = useMatches()
   const { predictionsMap, mutate } = useMyPredictions()
   const { isPaid } = usePaymentStatus()
@@ -112,6 +115,7 @@ export function PalpitarTabs() {
               predictionsMap={predictionsMap}
               onSaved={handleSaved}
               isPaid={isPaid}
+              targetMatchId={targetMatchId ?? undefined}
             />
           )}
           {activeTab === 'matamat' && (
@@ -120,6 +124,7 @@ export function PalpitarTabs() {
               predictionsMap={predictionsMap}
               onSaved={handleSaved}
               isPaid={isPaid}
+              targetMatchId={targetMatchId ?? undefined}
             />
           )}
         </>

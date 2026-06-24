@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { MatchCard } from './match-card'
 import { ProgressBar } from './progress-bar'
 import type { Match } from '@/lib/db/schema'
@@ -23,6 +23,7 @@ type KnockoutListProps = {
   predictionsMap: Map<number, MyPrediction>
   onSaved?: (matchId: number, hs: number, as_: number, qtc: string | null) => void
   isPaid: boolean
+  targetMatchId?: number
 }
 
 function isDefined(m: Match) {
@@ -40,8 +41,22 @@ function getDefaultStage(matches: Match[]): Stage {
   return matches.some(isDefined) ? 'final' : 'r32'
 }
 
-export function KnockoutList({ matches, predictionsMap, onSaved, isPaid }: KnockoutListProps) {
-  const [activeStage, setActiveStage] = useState<Stage>(() => getDefaultStage(matches))
+export function KnockoutList({ matches, predictionsMap, onSaved, isPaid, targetMatchId }: KnockoutListProps) {
+  const [activeStage, setActiveStage] = useState<Stage>(() => {
+    if (targetMatchId) {
+      const targetStage = matches.find((m) => m.id === targetMatchId)?.stage as Stage | undefined
+      if (targetStage && STAGE_ORDER.includes(targetStage)) return targetStage
+    }
+    return getDefaultStage(matches)
+  })
+
+  useEffect(() => {
+    if (!targetMatchId) return
+    const t = setTimeout(() => {
+      document.getElementById(`match-${targetMatchId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, 150)
+    return () => clearTimeout(t)
+  }, [targetMatchId])
 
   const byStage = new Map<Stage, Match[]>()
   for (const stage of STAGE_ORDER) byStage.set(stage, [])
@@ -103,6 +118,7 @@ export function KnockoutList({ matches, predictionsMap, onSaved, isPaid }: Knock
               prediction={predictionsMap.get(m.id)}
               onSaved={onSaved}
               isPaid={isPaid}
+              targetMatchId={targetMatchId}
             />
           ))}
         </div>
