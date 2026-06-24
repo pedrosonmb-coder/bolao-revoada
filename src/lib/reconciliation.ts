@@ -13,6 +13,7 @@ import { retryRecalculate } from './recalculate-retry'
 import { checkAndNotifyPhaseOpen } from './notifications/phase-open'
 import { alertAdminConflict } from './notifications/admin-alert'
 import { computeLockDecision, LOCK_THRESHOLD } from './reconciliation-lock'
+import { deriveQualifiedTeamCode } from './scoring/derive-qualified'
 export { computeLockDecision } from './reconciliation-lock'
 export type { LockDecision } from './reconciliation-lock'
 
@@ -231,11 +232,22 @@ export async function applyReconciliation(
   })
 
   if (decision.shouldLock) {
+    // FURO 1: deriva o classificado automaticamente ao travar o resultado
+    const qualifiedTeamCode = deriveQualifiedTeamCode(
+      decision.lockScore.home,
+      decision.lockScore.away,
+      snapshot.home_score_pen,
+      snapshot.away_score_pen,
+      current.stage
+    )
     await db
       .update(matches)
       .set({
         home_score: decision.lockScore.home,
         away_score: decision.lockScore.away,
+        home_score_pen: snapshot.home_score_pen,
+        away_score_pen: snapshot.away_score_pen,
+        qualified_team_code: qualifiedTeamCode,
         result_locked_at: new Date(),
       })
       .where(eq(matches.id, matchId))

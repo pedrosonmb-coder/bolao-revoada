@@ -24,6 +24,49 @@ function mapStatus(apiStatus: string): MatchStatus | null {
   }
 }
 
+type ScorePayload = {
+  duration?: string | null
+  fullTime?: { home?: number | null; away?: number | null } | null
+  extraTime?: { home?: number | null; away?: number | null } | null
+  penalties?: { home?: number | null; away?: number | null } | null
+}
+
+// FURO 3: exportado para ser testável.
+// football-data.org v4: score.fullTime = placar dos 90min APENAS.
+// Jogos decididos na prorrogação têm o placar real em score.extraTime.
+// score.duration indica o que aconteceu: 'REGULAR' | 'EXTRA_TIME' | 'PENALTY_SHOOTOUT'
+export function parseScoreFromPayload(score: ScorePayload): {
+  home_score: number | null
+  away_score: number | null
+  home_score_pen: number | null
+  away_score_pen: number | null
+} {
+  const duration = score?.duration ?? null
+
+  let home_score: number | null = score?.fullTime?.home ?? null
+  let away_score: number | null = score?.fullTime?.away ?? null
+
+  if (duration === 'EXTRA_TIME' || duration === 'PENALTY_SHOOTOUT') {
+    const etHome = score?.extraTime?.home ?? null
+    const etAway = score?.extraTime?.away ?? null
+    if (etHome !== null && etAway !== null) {
+      home_score = etHome
+      away_score = etAway
+    } else {
+      console.warn(
+        `[football-data] duration=${duration} mas extraTime null — fallback para fullTime`
+      )
+    }
+  }
+
+  return {
+    home_score,
+    away_score,
+    home_score_pen: score?.penalties?.home ?? null,
+    away_score_pen: score?.penalties?.away ?? null,
+  }
+}
+
 async function fetchWithRetry(url: string, attempt = 0): Promise<Response> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
@@ -72,15 +115,13 @@ export async function fetchMatchFromFootballData(
 
     const data = await res.json()
     const match = data.match ?? data
+    const scores = parseScoreFromPayload(match.score ?? {})
 
     return {
       source: 'football-data',
       external_id: String(fd_id),
       status: mapStatus(match.status ?? ''),
-      home_score: match.score?.fullTime?.home ?? null,
-      away_score: match.score?.fullTime?.away ?? null,
-      home_score_pen: match.score?.penalties?.home ?? null,
-      away_score_pen: match.score?.penalties?.away ?? null,
+      ...scores,
       raw_payload: data,
       fetched_at: new Date(),
     }

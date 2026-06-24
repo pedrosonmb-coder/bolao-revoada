@@ -142,20 +142,29 @@ export default function RegulamentoPage() {
           <h2 className="font-bold text-base mb-3">5. Bônus de classificação (só no mata-mata)</h2>
           <ul className="text-sm space-y-2 text-(--color-text-secondary) mb-4">
             <li>
-              A partir dos 16-avos, se você acertar qual seleção se classifica{' '}
-              <span className="font-medium text-(--color-text-primary)">E acertar o placar</span>,
-              ganha <span className="font-medium text-(--color-text-primary)">+5 pts de bônus</span>.
+              A partir dos 16-avos, se você acertar qual seleção se classifica, ganha{' '}
+              <span className="font-medium text-(--color-text-primary)">+8 pts de bônus</span> —
+              independente de ter acertado o placar.
             </li>
-            <li>O bônus é somado antes do multiplicador da fase.</li>
             <li>
-              <span className="font-medium text-(--color-text-primary)">Atenção:</span>{' '}
-              se você errar o placar, não ganha o bônus, mesmo acertando quem passou.
+              O bônus é{' '}
+              <span className="font-medium text-(--color-text-primary)">fixo: não multiplica</span>{' '}
+              com o multiplicador da fase. Ele é somado depois.
+            </li>
+            <li>
+              Se você palpitou um vencedor (ex: 2×1), o app entende automaticamente que você
+              está indicando esse time como classificado — sem precisar escolher separado.
+            </li>
+            <li>
+              Se você palpitou empate, o app pede que você escolha quem avança nos pênaltis.
             </li>
           </ul>
-          <p className="text-sm italic text-(--color-text-secondary) border-l-2 border-(--color-border-base) pl-3">
-            Exemplo: nas oitavas (×2), você acerta o placar exato (25) e a seleção que classifica (+5)
-            = (25+5) × 2 = 60 pts. Na final (×2,5), placar exato + classificação = (25+5) × 2,5 = 75 pts.
-          </p>
+          <div className="text-sm text-(--color-text-secondary) border-l-2 border-(--color-border-base) pl-3 space-y-1">
+            <p className="italic">Exemplos (quartas = ×2, final = ×2,5):</p>
+            <p>Placar exato + acertou classificado nas quartas: 25×2 + 8 = <span className="font-medium text-(--color-text-primary)">58 pts</span></p>
+            <p>Só o vencedor + acertou classificado nas quartas: 10×2 + 8 = <span className="font-medium text-(--color-text-primary)">28 pts</span></p>
+            <p>Placar exato + acertou classificado na final: 25×2,5 + 8 = <span className="font-medium text-(--color-text-primary)">71 pts</span></p>
+          </div>
         </section>
 
         {/* Seção 6 — Palpites de torneio */}

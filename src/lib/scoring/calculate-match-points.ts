@@ -20,6 +20,9 @@ export type PointsBreakdown = {
   points_awarded: number
 }
 
+// Bônus fixo por acertar o classificado — NÃO escala com o multiplicador de fase
+const CLASSIFICATION_BONUS = 8
+
 type Winner = 'home' | 'away' | 'draw'
 
 function getWinner(home: number, away: number): Winner {
@@ -74,16 +77,29 @@ export function calculateMatchPoints(
     }
   }
 
+  // FURO 2: derivar effectivePredQTC quando o palpite tem vencedor implícito
+  // (palpite 2-1 → qualified_team_code implícito = 'home', sem precisar do seletor)
+  const effectivePredQTC: 'home' | 'away' | null =
+    prediction.qualified_team_code !== null
+      ? prediction.qualified_team_code
+      : match.stage !== 'group' && prediction.home_score !== prediction.away_score
+      ? prediction.home_score > prediction.away_score
+        ? 'home'
+        : 'away'
+      : null
+
+  // Bônus fixo de +8 (NÃO multiplicado pelo multiplicador de fase)
   const classification_bonus =
     match.stage !== 'group' &&
-    prediction.qualified_team_code !== null &&
+    effectivePredQTC !== null &&
     match.qualified_team_code !== null &&
-    prediction.qualified_team_code === match.qualified_team_code
-      ? 5
+    effectivePredQTC === match.qualified_team_code
+      ? CLASSIFICATION_BONUS
       : 0
 
   const multiplier = STAGE_MULTIPLIERS[match.stage]
-  const points_awarded = (base_points + classification_bonus) * multiplier
+  // Nova fórmula: bônus fixo NÃO escala com a fase
+  const points_awarded = Math.round(base_points * multiplier) + classification_bonus
 
   return { base_points, classification_bonus, multiplier, points_awarded }
 }
