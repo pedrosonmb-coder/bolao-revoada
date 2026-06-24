@@ -155,6 +155,23 @@ export async function areAllMatchesLockedForStage(stage: string): Promise<boolea
   return !pending
 }
 
+export type PhaseStatus = 'not_started' | 'in_progress' | 'closed'
+
+export async function getPhaseStatus(stages: string[]): Promise<PhaseStatus> {
+  const [totalRows, lockedRows] = await Promise.all([
+    db.select({ n: count() }).from(matches).where(inArray(matches.stage, stages)),
+    db.select({ n: count() }).from(matches).where(
+      and(inArray(matches.stage, stages), isNotNull(matches.result_locked_at))
+    ),
+  ])
+  const total = Number(totalRows[0]?.n ?? 0)
+  const locked = Number(lockedRows[0]?.n ?? 0)
+
+  if (total === 0 || locked === 0) return 'not_started'
+  if (locked >= total) return 'closed'
+  return 'in_progress'
+}
+
 // ---------------------------------------------------------------------------
 // reveal-predictions queries
 // ---------------------------------------------------------------------------

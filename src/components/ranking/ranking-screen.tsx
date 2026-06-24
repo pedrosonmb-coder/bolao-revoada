@@ -26,25 +26,44 @@ const TABS: TabDef[] = [
   { id: 'final',   label: 'Final',     stages: ['final'] },
 ]
 
-function MedalIcon({ position }: { position: number }) {
+// Preposição correta pra cada fase no rótulo de campeão/líder
+const PHASE_OF: Record<TabId, string> = {
+  geral:   'Geral',
+  grupos:  'dos Grupos',
+  matamat: 'do Mata-mata',
+  r32:     'dos 16avos',
+  r16:     'das Oitavas',
+  qf:      'das Quartas',
+  sf:      'das Semifinais',
+  final:   'da Final',
+}
+
+function MedalIcon({ position, crowned }: { position: number; crowned?: boolean }) {
   if (position > 3) return null
   const colors = ['#FFD700', '#C0C0C0', '#CD7F32']
   const color = colors[position - 1]
   return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
-      <circle cx="10" cy="10" r="9" fill={color} />
-      <text
-        x="10"
-        y="14"
-        textAnchor="middle"
-        fontSize="10"
-        fontWeight="bold"
-        fill="white"
-        fontFamily="sans-serif"
-      >
-        {position}
-      </text>
-    </svg>
+    <span className="relative inline-flex items-center justify-center">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
+        <circle cx="10" cy="10" r="9" fill={color} />
+        <text
+          x="10"
+          y="14"
+          textAnchor="middle"
+          fontSize="10"
+          fontWeight="bold"
+          fill="white"
+          fontFamily="sans-serif"
+        >
+          {position}
+        </text>
+      </svg>
+      {crowned && (
+        <span className="absolute -top-2 -right-1 text-[10px] leading-none" aria-label="campeão">
+          ♛
+        </span>
+      )}
+    </span>
   )
 }
 
@@ -71,8 +90,13 @@ export function RankingScreen() {
   const { data, isLoading } = useRanking(activeTabDef.stages)
 
   const ranking = data?.ranking ?? []
+  const phaseStatus = data?.phase_status ?? null
   const isPhaseFilter = activeTab !== 'geral'
   const allZero = ranking.every((e) => e.total_points === 0)
+
+  // Champions: entries tied at position 1 (may be >1 in case of true tie)
+  const champions = ranking.filter((e) => e.position === 1)
+  const leader = ranking[0] ?? null
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -100,6 +124,36 @@ export function RankingScreen() {
       </div>
 
       <div className="px-4 py-6">
+        {/* Banners de status da fase (só em filtros por fase) */}
+        {isPhaseFilter && !isLoading && phaseStatus === 'closed' && champions.length > 0 && (
+          <div className="bg-(--color-bg-surface) border border-(--color-border-base) rounded-xl px-4 py-3 mb-4 flex items-center gap-2">
+            <span className="text-base" aria-hidden>🏆</span>
+            <div className="text-sm">
+              <span className="font-semibold text-(--color-text-primary)">
+                Campeão {PHASE_OF[activeTab]}:
+              </span>{' '}
+              <span className="text-(--color-text-primary)">
+                {champions.map((c) => c.name).join(' e ')}
+              </span>
+              {' '}
+              <span className="text-(--color-text-secondary)">
+                — {champions[0].total_points} pts
+              </span>
+            </div>
+          </div>
+        )}
+
+        {isPhaseFilter && !isLoading && phaseStatus === 'in_progress' && leader && (
+          <div className="bg-(--color-bg-surface) rounded-xl px-4 py-2.5 mb-4">
+            <p className="text-xs text-(--color-text-secondary)">
+              Líder parcial {PHASE_OF[activeTab]}:{' '}
+              <span className="font-medium text-(--color-text-primary)">{leader.name}</span>
+              {' '}— {leader.total_points} pts
+            </p>
+          </div>
+        )}
+
+        {/* Banner de zeros para aba Geral */}
         {!isPhaseFilter && allZero && (
           <div className="bg-(--color-bg-surface) rounded-xl p-4 mb-6 text-center">
             <p className="text-sm text-(--color-text-secondary)">
@@ -116,7 +170,7 @@ export function RankingScreen() {
           </div>
         ) : ranking.length === 0 ? (
           <EmptyState title="Calmo aqui." description="Já já enche." />
-        ) : isPhaseFilter && allZero ? (
+        ) : isPhaseFilter && (phaseStatus === 'not_started' || allZero) ? (
           // Fase sem dados: lista alfabética sem posições ou medalhas
           <div>
             <p className="text-xs text-(--color-text-secondary) mb-3">
@@ -136,7 +190,6 @@ export function RankingScreen() {
                       }`}
                       onClick={() => setSelectedUserId(entry.user_id)}
                     >
-                      {/* Espaço reservado no lugar do número/medalha — sem número */}
                       <span className="w-6 shrink-0" />
 
                       {entry.photo_url ? (
@@ -168,6 +221,7 @@ export function RankingScreen() {
             {ranking.map((entry) => {
               const isMe = entry.telegram_id === me?.telegram_id
               const isTop3 = entry.position <= 3
+              const isCrowned = isPhaseFilter && phaseStatus === 'closed' && entry.position === 1
 
               return (
                 <button
@@ -182,7 +236,7 @@ export function RankingScreen() {
                 >
                   <span className="w-6 flex items-center justify-center shrink-0">
                     {isTop3 ? (
-                      <MedalIcon position={entry.position} />
+                      <MedalIcon position={entry.position} crowned={isCrowned} />
                     ) : (
                       <span
                         className={`font-[family-name:var(--font-tight)] font-black text-lg ${
@@ -220,7 +274,6 @@ export function RankingScreen() {
                     {entry.name}
                   </span>
 
-                  {/* PositionDelta only meaningful in Geral (phase ranking has prev_position=null) */}
                   <PositionDelta current={entry.position} prev={entry.prev_position} />
 
                   <span

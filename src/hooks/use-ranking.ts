@@ -5,7 +5,10 @@ import { swrFetcher } from '@/lib/api/client'
 import type { RankingEntry, UserDetail } from '@/lib/scoring/ranking'
 import type { Distribution, MatchResult } from '@/lib/scoring/full-ranking-helpers'
 
-type RankingResponse = { ranking: RankingEntry[] }
+type RankingResponse = {
+  ranking: RankingEntry[]
+  phase_status: 'not_started' | 'in_progress' | 'closed' | null
+}
 
 export type MatchEntry = {
   match_id: number
