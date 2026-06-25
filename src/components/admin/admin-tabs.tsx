@@ -6,10 +6,11 @@ import { apiFetch } from '@/lib/api/client'
 import { UsersTab } from './users-tab'
 import { MatchesTab } from './matches-tab'
 import { SystemTab } from './system-tab'
+import { TournamentTab } from './tournament-tab'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { Match } from '@/lib/db/schema'
 
-type Tab = 'users' | 'matches' | 'system'
+type Tab = 'users' | 'matches' | 'system' | 'tournament'
 
 type AdminUser = {
   user_id: number
@@ -65,6 +66,7 @@ export function AdminTabs({ telegramId }: { telegramId: number }) {
     { id: 'users', label: 'Usuários' },
     { id: 'matches', label: 'Jogos' },
     { id: 'system', label: 'Sistema' },
+    { id: 'tournament', label: 'Torneio' },
   ]
 
   return (
@@ -102,6 +104,9 @@ export function AdminTabs({ telegramId }: { telegramId: number }) {
           )}
           {tab === 'system' && (
             <SystemTab status={systemStatus} telegramId={telegramId} onRefresh={loadAll} />
+          )}
+          {tab === 'tournament' && (
+            <TournamentTab telegramId={telegramId} />
           )}
         </>
       )}
