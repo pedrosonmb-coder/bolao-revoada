@@ -5,8 +5,28 @@ export const CHART_W = 300
 export const CHART_H = 120
 export const PAD = { top: 14, right: 36, bottom: 24, left: 28 } as const
 
+// Returns the effective Y-axis range after applying a minimum span proportional to
+// totalParticipants (40 % of total), centred over the actual min/max.
+// This prevents a 1-position swing from filling 100 % of chart height.
+export function computeYRange(
+  positions: number[],
+  totalParticipants: number,
+): { effectiveMin: number; effectiveMax: number } {
+  if (positions.length === 0) return { effectiveMin: 1, effectiveMax: 1 }
+  const minPos = Math.min(...positions)
+  const maxPos = Math.max(...positions)
+  const realRange = maxPos - minPos
+  const minRange = Math.ceil(totalParticipants * 0.4)
+  const effectiveRange = Math.max(realRange, minRange, 1)
+  const halfPad = Math.floor((effectiveRange - realRange) / 2)
+  const effectiveMin = Math.max(1, minPos - halfPad)
+  const effectiveMax = effectiveMin + effectiveRange
+  return { effectiveMin, effectiveMax }
+}
+
 export function toChartPoints(
   history: PositionPoint[],
+  totalParticipants: number,
   width = CHART_W,
   height = CHART_H,
   pad = PAD,
@@ -17,13 +37,13 @@ export function toChartPoints(
   const innerH = height - pad.top - pad.bottom
 
   const positions = history.map((p) => p.position)
-  const minPos = Math.min(...positions)
-  const maxPos = Math.max(...positions)
-  const posRange = maxPos - minPos
+  const { effectiveMin, effectiveMax } = computeYRange(positions, totalParticipants)
+  const effectiveRange = effectiveMax - effectiveMin
 
   return history.map((p, i) => {
     const xFrac = history.length === 1 ? 0.5 : i / (history.length - 1)
-    const yFrac = posRange === 0 ? 0.5 : (p.position - minPos) / posRange
+    // Single-point series: centre vertically (no movement to represent)
+    const yFrac = history.length === 1 ? 0.5 : (p.position - effectiveMin) / effectiveRange
     return {
       ...p,
       x: pad.left + xFrac * innerW,

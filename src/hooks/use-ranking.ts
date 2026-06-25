@@ -36,6 +36,8 @@ export type UserFull = UserDetail & {
   worst_match: MatchResult | null
   group_comparison: { user_avg_per_match: number; group_avg_per_match: number }
   position_history: PositionPoint[]
+  total_participants: number
+  closed_matches: { total: number; missed: number }
   badges: BadgeEntry[]
 }
 

@@ -6,7 +6,7 @@ import { useUserFull } from '@/hooks/use-ranking'
 import { getTeamDisplay } from '@/lib/teams'
 import { Skeleton } from '@/components/ui/skeleton'
 import { pointsColor } from '@/lib/scoring/points-color'
-import { toChartPoints, xLabelStep } from '@/lib/scoring/position-chart'
+import { toChartPoints, computeYRange, xLabelStep } from '@/lib/scoring/position-chart'
 import type { Distribution, MatchResult } from '@/lib/scoring/full-ranking-helpers'
 import type { MatchEntry, PositionPoint } from '@/hooks/use-ranking'
 
@@ -182,13 +182,12 @@ function fmtSnapshotDate(d: string): string {
   return `${day}/${month}`
 }
 
-function PositionChart({ history }: { history: PositionPoint[] }) {
+function PositionChart({ history, totalParticipants }: { history: PositionPoint[]; totalParticipants: number }) {
   if (history.length < 2) return null
 
-  const pts = toChartPoints(history)
+  const pts = toChartPoints(history, totalParticipants)
   const positions = history.map((p) => p.position)
-  const minPos = Math.min(...positions)
-  const maxPos = Math.max(...positions)
+  const { effectiveMin, effectiveMax } = computeYRange(positions, totalParticipants)
   const last = pts[pts.length - 1]
   const step = xLabelStep(pts.length)
 
@@ -203,15 +202,11 @@ function PositionChart({ history }: { history: PositionPoint[] }) {
     >
       {/* Grid lines */}
       <line x1="28" y1="14" x2="264" y2="14" stroke="var(--color-border-base)" strokeWidth="0.5" strokeDasharray="3 3" />
-      {minPos !== maxPos && (
-        <line x1="28" y1="96" x2="264" y2="96" stroke="var(--color-border-base)" strokeWidth="0.5" strokeDasharray="3 3" />
-      )}
+      <line x1="28" y1="96" x2="264" y2="96" stroke="var(--color-border-base)" strokeWidth="0.5" strokeDasharray="3 3" />
 
       {/* Y axis labels */}
-      <text x="22" y="18" textAnchor="end" fontSize="9" fill="var(--color-text-secondary)">{minPos}º</text>
-      {minPos !== maxPos && (
-        <text x="22" y="100" textAnchor="end" fontSize="9" fill="var(--color-text-secondary)">{maxPos}º</text>
-      )}
+      <text x="22" y="18" textAnchor="end" fontSize="9" fill="var(--color-text-secondary)">{effectiveMin}º</text>
+      <text x="22" y="100" textAnchor="end" fontSize="9" fill="var(--color-text-secondary)">{effectiveMax}º</text>
 
       {/* X axis date labels */}
       {pts.map((p, i) => {
@@ -352,7 +347,7 @@ export default function UserPerformancePage() {
     )
   }
 
-  const { user, totals, achievements, distribution, best_match, worst_match, group_comparison, matches, position_history, badges } = data
+  const { user, totals, achievements, distribution, best_match, worst_match, group_comparison, matches, position_history, total_participants, closed_matches, badges } = data
   const total = distTotal(distribution)
   const accuracyPct = total > 0 ? Math.round((achievements.winners_correct / total) * 100) : 0
   const diff = group_comparison.user_avg_per_match - group_comparison.group_avg_per_match
@@ -431,6 +426,22 @@ export default function UserPerformancePage() {
           </div>
         </div>
 
+        {/* ----------------------------------- DISCIPLINA DE PALPITE */}
+        {closed_matches.total > 0 && (
+          <p
+            className="text-xs px-1"
+            style={{
+              color: closed_matches.missed === 0
+                ? 'var(--color-status-success)'
+                : 'var(--color-text-secondary)',
+            }}
+          >
+            {closed_matches.missed === 0
+              ? `Palpitou todos os ${closed_matches.total} jogos ✓`
+              : `Palpitou ${closed_matches.total - closed_matches.missed} de ${closed_matches.total} jogos fechados`}
+          </p>
+        )}
+
         {/* ------------------------------------------ PERFIL DE PALPITE */}
         <div className="bg-(--color-bg-surface) rounded-xl p-4">
           <p className="text-xs font-semibold text-(--color-text-secondary) uppercase tracking-wide mb-3">
@@ -445,7 +456,10 @@ export default function UserPerformancePage() {
             <p className="text-xs font-semibold text-(--color-text-secondary) uppercase tracking-wide mb-3">
               Evolução no ranking
             </p>
-            <PositionChart history={position_history} />
+            <PositionChart history={position_history} totalParticipants={total_participants} />
+            <p className="text-xs text-(--color-text-secondary) mt-2 text-right">
+              desde {fmtSnapshotDate(position_history[0].date)}
+            </p>
           </div>
         )}
 

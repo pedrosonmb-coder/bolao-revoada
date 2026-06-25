@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { eq, and, isNotNull, avg, asc } from 'drizzle-orm'
+import { eq, and, isNotNull, avg, asc, count, sql, lt } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { predictions, matches, users, rankingSnapshots } from '@/lib/db/schema'
 import { requireUser } from '@/lib/server/auth'
@@ -27,7 +27,7 @@ export async function GET(
     return NextResponse.json({ error: 'user_id inválido' }, { status: 400 })
   }
 
-  const [detail, predRows, groupAvgRow, snapshotRows, badges] = await Promise.all([
+  const [detail, predRows, groupAvgRow, snapshotRows, badges, participantRow, closedMatchRow] = await Promise.all([
     getUserDetail(userId),
     db
       .select({
@@ -63,6 +63,19 @@ export async function GET(
       .where(eq(rankingSnapshots.user_id, userId))
       .orderBy(asc(rankingSnapshots.snapshot_date)),
     computeUserBadges(userId),
+    db.select({ total: count() }).from(users).where(eq(users.is_active, true)).get(),
+    db
+      .select({
+        closed_total: count(),
+        missed: sql<number>`COUNT(CASE WHEN ${predictions.id} IS NULL THEN 1 END)`,
+      })
+      .from(matches)
+      .leftJoin(
+        predictions,
+        and(eq(predictions.match_id, matches.id), eq(predictions.user_id, userId))
+      )
+      .where(lt(matches.predictions_close_at, sql`unixepoch()`))
+      .get(),
   ])
 
   if (!detail) {
@@ -114,6 +127,11 @@ export async function GET(
       group_avg_per_match: group_avg,
     },
     position_history: snapshotRows,
+    total_participants: participantRow?.total ?? 0,
+    closed_matches: {
+      total: closedMatchRow?.closed_total ?? 0,
+      missed: closedMatchRow?.missed ?? 0,
+    },
     badges,
   })
 }
