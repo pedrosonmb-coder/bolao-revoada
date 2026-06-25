@@ -147,6 +147,95 @@ describe('calculateTournamentPoints', () => {
     ).toBe(25)
   })
 
+  it('top scorer com alias (|): palpite casa com 2ª grafia → acerta', () => {
+    expect(
+      calculateTournamentPoints(
+        {
+          champion_code: null,
+          runner_up_code: null,
+          semifinalist_1_code: null,
+          semifinalist_2_code: null,
+          top_scorer_name: 'kylian',
+          best_player_name: null,
+          best_young_player_name: null,
+        },
+        { ...result, top_scorer_name: 'Mbappé|kylian|k mbappe' }
+      )
+    ).toBe(50)
+  })
+
+  it('top scorer com alias (|): palpite casa com 1ª grafia (retrocompat com campo simples)', () => {
+    expect(
+      calculateTournamentPoints(
+        {
+          champion_code: null,
+          runner_up_code: null,
+          semifinalist_1_code: null,
+          semifinalist_2_code: null,
+          top_scorer_name: 'Vinicius Jr',
+          best_player_name: null,
+          best_young_player_name: null,
+        },
+        result // result.top_scorer_name = 'Vinicius Jr' (sem '|')
+      )
+    ).toBe(50)
+  })
+
+  it('top scorer com alias (|): nenhuma grafia casa → 0 pts', () => {
+    expect(
+      calculateTournamentPoints(
+        {
+          champion_code: null,
+          runner_up_code: null,
+          semifinalist_1_code: null,
+          semifinalist_2_code: null,
+          top_scorer_name: 'neymar',
+          best_player_name: null,
+          best_young_player_name: null,
+        },
+        { ...result, top_scorer_name: 'Mbappé|kylian|k mbappe' }
+      )
+    ).toBe(0)
+  })
+
+  it('alias com normalização: acento diferente na alias → acerta', () => {
+    expect(
+      calculateTournamentPoints(
+        {
+          champion_code: null,
+          runner_up_code: null,
+          semifinalist_1_code: null,
+          semifinalist_2_code: null,
+          top_scorer_name: 'mbappe',
+          best_player_name: null,
+          best_young_player_name: null,
+        },
+        { ...result, top_scorer_name: 'Mbappé|kylian' }
+      )
+    ).toBe(50)
+  })
+
+  it('best_player e best_young_player também aceitam alias', () => {
+    expect(
+      calculateTournamentPoints(
+        {
+          champion_code: null,
+          runner_up_code: null,
+          semifinalist_1_code: null,
+          semifinalist_2_code: null,
+          top_scorer_name: null,
+          best_player_name: 'leo messi',
+          best_young_player_name: 'endrick',
+        },
+        {
+          ...result,
+          best_player_name: 'Messi|Leo Messi',
+          best_young_player_name: 'Endrick|Éndrick',
+        }
+      )
+    ).toBe(75) // 50 best_player + 25 best_young
+  })
+
   it('semifinalista_1 é o mesmo que campeão real → não conta como "outro semi"', () => {
     // BRA é campeão; palpitar BRA como semi_1 não deve ganhar 25 pts
     expect(

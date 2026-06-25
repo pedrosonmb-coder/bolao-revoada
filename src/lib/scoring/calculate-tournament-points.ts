@@ -19,6 +19,14 @@ type TournamentResult = {
   best_young_player_name: string
 }
 
+// Player name fields accept '|'-separated aliases (e.g. "Mbappé|kylian|k mbappe").
+// A prediction matches if it normalizes to any of the aliases.
+function matchesAnyAlias(predicted: string | null, officialWithAliases: string): boolean {
+  if (!predicted) return false
+  const valid = officialWithAliases.split('|').map(normalizeName).filter(Boolean)
+  return valid.includes(normalizeName(predicted))
+}
+
 export function calculateTournamentPoints(
   prediction: TournamentPrediction,
   result: TournamentResult
@@ -45,27 +53,9 @@ export function calculateTournamentPoints(
     }
   }
 
-  if (
-    prediction.top_scorer_name &&
-    normalizeName(prediction.top_scorer_name) === normalizeName(result.top_scorer_name)
-  ) {
-    pts += 50
-  }
-
-  if (
-    prediction.best_player_name &&
-    normalizeName(prediction.best_player_name) === normalizeName(result.best_player_name)
-  ) {
-    pts += 50
-  }
-
-  if (
-    prediction.best_young_player_name &&
-    normalizeName(prediction.best_young_player_name) ===
-      normalizeName(result.best_young_player_name)
-  ) {
-    pts += 25
-  }
+  if (matchesAnyAlias(prediction.top_scorer_name, result.top_scorer_name)) pts += 50
+  if (matchesAnyAlias(prediction.best_player_name, result.best_player_name)) pts += 50
+  if (matchesAnyAlias(prediction.best_young_player_name, result.best_young_player_name)) pts += 25
 
   return pts
 }
