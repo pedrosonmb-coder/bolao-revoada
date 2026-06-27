@@ -7,36 +7,46 @@ import { UserDetailDrawer } from './user-detail-drawer'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Skeleton } from '@/components/ui/skeleton'
 
-type TabId = 'geral' | 'grupos' | 'matamat' | 'r32' | 'r16' | 'qf' | 'sf' | 'final'
+type TabId = 'geral' | 'grupos' | 'matamat' | 'torneio'
 
 type TabDef = {
   id: TabId
   label: string
-  stages: string[] | undefined
+  stages?: string[]
+  mode?: 'tournament'
+  emptyText: string
+  phaseOf: string
 }
 
 const TABS: TabDef[] = [
-  { id: 'geral',   label: 'Geral',     stages: undefined },
-  { id: 'grupos',  label: 'Grupos',    stages: ['group'] },
-  { id: 'matamat', label: 'Mata-mata', stages: ['r32', 'r16', 'qf', 'sf', '3rd', 'final'] },
-  { id: 'r32',     label: '16avos',    stages: ['r32'] },
-  { id: 'r16',     label: 'Oitavas',   stages: ['r16'] },
-  { id: 'qf',      label: 'Quartas',   stages: ['qf'] },
-  { id: 'sf',      label: 'Semi',      stages: ['sf'] },
-  { id: 'final',   label: 'Final',     stages: ['final'] },
+  {
+    id: 'geral',
+    label: 'Geral',
+    emptyText: 'Pontuação será calculada quando a Copa começar. Por enquanto, todos com 0 pontos.',
+    phaseOf: 'Geral',
+  },
+  {
+    id: 'grupos',
+    label: 'Grupos',
+    stages: ['group'],
+    emptyText: 'A fase ainda não começou.',
+    phaseOf: 'dos Grupos',
+  },
+  {
+    id: 'matamat',
+    label: 'Mata-mata',
+    stages: ['r32', 'r16', 'qf', 'sf', '3rd', 'final'],
+    emptyText: 'A fase ainda não começou.',
+    phaseOf: 'do Mata-mata',
+  },
+  {
+    id: 'torneio',
+    label: 'Torneio',
+    mode: 'tournament',
+    emptyText: 'O ranking de Torneio é pontuado no fim da Copa.',
+    phaseOf: 'do Torneio',
+  },
 ]
-
-// Preposição correta pra cada fase no rótulo de campeão/líder
-const PHASE_OF: Record<TabId, string> = {
-  geral:   'Geral',
-  grupos:  'dos Grupos',
-  matamat: 'do Mata-mata',
-  r32:     'dos 16avos',
-  r16:     'das Oitavas',
-  qf:      'das Quartas',
-  sf:      'das Semifinais',
-  final:   'da Final',
-}
 
 function MedalIcon({ position, crowned }: { position: number; crowned?: boolean }) {
   if (position > 3) return null
@@ -87,7 +97,7 @@ export function RankingScreen() {
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null)
 
   const activeTabDef = TABS.find((t) => t.id === activeTab)!
-  const { data, isLoading } = useRanking(activeTabDef.stages)
+  const { data, isLoading } = useRanking({ stages: activeTabDef.stages, mode: activeTabDef.mode })
 
   const ranking = data?.ranking ?? []
   const phaseStatus = data?.phase_status ?? null
@@ -130,7 +140,7 @@ export function RankingScreen() {
             <span className="text-base" aria-hidden>🏆</span>
             <div className="text-sm">
               <span className="font-semibold text-(--color-text-primary)">
-                Campeão {PHASE_OF[activeTab]}:
+                Campeão {activeTabDef.phaseOf}:
               </span>{' '}
               <span className="text-(--color-text-primary)">
                 {champions.map((c) => c.name).join(' e ')}
@@ -146,7 +156,7 @@ export function RankingScreen() {
         {isPhaseFilter && !isLoading && phaseStatus === 'in_progress' && leader && (
           <div className="bg-(--color-bg-surface) rounded-xl px-4 py-2.5 mb-4">
             <p className="text-xs text-(--color-text-secondary)">
-              Líder parcial {PHASE_OF[activeTab]}:{' '}
+              Líder parcial {activeTabDef.phaseOf}:{' '}
               <span className="font-medium text-(--color-text-primary)">{leader.name}</span>
               {' '}— {leader.total_points} pts
             </p>
@@ -157,7 +167,7 @@ export function RankingScreen() {
         {!isPhaseFilter && allZero && (
           <div className="bg-(--color-bg-surface) rounded-xl p-4 mb-6 text-center">
             <p className="text-sm text-(--color-text-secondary)">
-              Pontuação será calculada quando a Copa começar. Por enquanto, todos com 0 pontos.
+              {activeTabDef.emptyText}
             </p>
           </div>
         )}
@@ -174,7 +184,7 @@ export function RankingScreen() {
           // Fase sem dados: lista alfabética sem posições ou medalhas
           <div>
             <p className="text-xs text-(--color-text-secondary) mb-3">
-              A fase ainda não começou
+              {activeTabDef.emptyText}
             </p>
             <div className="space-y-2">
               {[...ranking]

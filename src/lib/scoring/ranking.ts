@@ -4,6 +4,10 @@ import { eq, isNotNull, and } from 'drizzle-orm'
 import type { Match } from '@/lib/db/schema'
 import { getDisplayName } from '@/lib/display-name'
 import { buildPhaseRankingEntries } from './ranking-phase-builder'
+import {
+  buildTournamentRankingEntries,
+  getTournamentPhaseStatus,
+} from './ranking-tournament-builder'
 
 // RankingEntry is canonical in ranking-phase-builder; re-exported here for
 // backward compat (all existing importers use '@/lib/scoring/ranking').
@@ -106,6 +110,28 @@ export async function getRanking(stages?: string[]): Promise<RankingEntry[]> {
   }
 
   return entries
+}
+
+export async function getTournamentRanking(): Promise<{
+  ranking: RankingEntry[]
+  phase_status: 'not_started' | 'closed'
+}> {
+  const [activeUsers, preds] = await Promise.all([
+    db.select().from(users).where(eq(users.is_active, true)),
+    db
+      .select({
+        user_id: tournamentPredictions.user_id,
+        points_awarded: tournamentPredictions.points_awarded,
+        closed_at: tournamentPredictions.closed_at,
+        computed_at: tournamentPredictions.computed_at,
+      })
+      .from(tournamentPredictions),
+  ])
+
+  return {
+    ranking: buildTournamentRankingEntries(activeUsers, preds),
+    phase_status: getTournamentPhaseStatus(preds),
+  }
 }
 
 export type UserDetail = {

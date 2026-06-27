@@ -41,10 +41,13 @@ export type UserFull = UserDetail & {
   badges: BadgeEntry[]
 }
 
-export function useRanking(stages?: string[]) {
-  const url = stages?.length
-    ? `/api/ranking?stages=${stages.join(',')}`
-    : '/api/ranking'
+export function useRanking(options?: { stages?: string[]; mode?: 'tournament' }) {
+  let url = '/api/ranking'
+  if (options?.mode === 'tournament') {
+    url = '/api/ranking?mode=tournament'
+  } else if (options?.stages?.length) {
+    url = `/api/ranking?stages=${options.stages.join(',')}`
+  }
   return useSWR<RankingResponse>(url, swrFetcher, {
     refreshInterval: 30000,
     revalidateOnFocus: true,
