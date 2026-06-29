@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useTelegram } from '@/components/providers/telegram-provider'
 import { useRanking } from '@/hooks/use-ranking'
+import type { BadgeId, ChampionsMap } from '@/hooks/use-ranking'
 import { UserDetailDrawer } from './user-detail-drawer'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -47,6 +48,70 @@ const TABS: TabDef[] = [
     phaseOf: 'do Torneio',
   },
 ]
+
+const BADGE_ICONS: Record<BadgeId, string> = {
+  champion_group:    '🏅',
+  champion_knockout: '⚔️',
+  champion_overall:  '🏆',
+  champion_brazil:   '🇧🇷',
+}
+
+function BadgeIcons({ badges }: { badges: BadgeId[] | undefined }) {
+  if (!badges?.length) return null
+  return (
+    <span className="text-xs ml-1 leading-none" aria-label="selos">
+      {badges.map((b) => BADGE_ICONS[b]).join('')}
+    </span>
+  )
+}
+
+type MuralSection = { label: string; entries: { name: string; total_points: number }[] | null }
+
+function MuralCard({ champions }: { champions: ChampionsMap | undefined }) {
+  const [open, setOpen] = useState(false)
+
+  if (!champions) return null
+  const hasAny = Object.values(champions).some((v) => v !== null)
+  if (!hasAny) return null
+
+  const sections: MuralSection[] = [
+    { label: 'Campeão Geral',        entries: champions.overall },
+    { label: 'Campeão dos Grupos',   entries: champions.group },
+    { label: 'Campeão do Mata-mata', entries: champions.knockout },
+    { label: 'Campeão do Brasil',    entries: champions.brazil },
+    { label: 'Campeão do Torneio',   entries: champions.tournament },
+  ]
+
+  return (
+    <div className="bg-(--color-bg-surface) border border-(--color-border-base) rounded-xl mb-4 overflow-hidden">
+      <button
+        type="button"
+        className="w-full flex items-center justify-between px-4 py-3"
+        onClick={() => setOpen((o) => !o)}
+      >
+        <span className="text-sm font-semibold text-(--color-text-primary)">🏆 Mural de Conquistas</span>
+        <span className="text-(--color-text-secondary) text-xs">{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <div className="px-4 pb-4 space-y-2 border-t border-(--color-border-base) pt-3">
+          {sections.map(({ label, entries }) => (
+            <div key={label} className="flex items-start gap-2 text-xs">
+              <span className="text-(--color-text-secondary) w-40 shrink-0">{label}</span>
+              {entries ? (
+                <span className="font-medium text-(--color-text-primary)">
+                  {entries.map((e) => e.name).join(' e ')}
+                  <span className="text-(--color-text-secondary)"> — {entries[0].total_points} pts</span>
+                </span>
+              ) : (
+                <span className="text-(--color-text-secondary) italic">não definido</span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 function MedalIcon({ position, crowned }: { position: number; crowned?: boolean }) {
   if (position > 3) return null
@@ -101,6 +166,8 @@ export function RankingScreen() {
 
   const ranking = data?.ranking ?? []
   const phaseStatus = data?.phase_status ?? null
+  const badgeMap = data?.badge_map
+  const championsData = data?.champions
   const isPhaseFilter = activeTab !== 'geral'
   const allZero = ranking.every((e) => e.total_points === 0)
 
@@ -163,6 +230,11 @@ export function RankingScreen() {
           </div>
         )}
 
+        {/* Mural de conquistas — só na aba Geral */}
+        {!isPhaseFilter && !isLoading && (
+          <MuralCard champions={championsData} />
+        )}
+
         {/* Banner de zeros para aba Geral */}
         {!isPhaseFilter && allZero && (
           <div className="bg-(--color-bg-surface) rounded-xl p-4 mb-6 text-center">
@@ -191,6 +263,7 @@ export function RankingScreen() {
                 .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
                 .map((entry) => {
                   const isMe = entry.telegram_id === me?.telegram_id
+                  const badges = badgeMap ? badgeMap[entry.user_id] : undefined
                   return (
                     <button
                       key={entry.user_id}
@@ -214,6 +287,7 @@ export function RankingScreen() {
 
                       <span className={`flex-1 text-sm font-medium ${isMe ? 'text-white' : 'text-(--color-text-primary)'}`}>
                         {entry.name}
+                        <BadgeIcons badges={badges} />
                       </span>
 
                       <span className={`font-[family-name:var(--font-tight)] font-bold text-sm ${
@@ -232,6 +306,7 @@ export function RankingScreen() {
               const isMe = entry.telegram_id === me?.telegram_id
               const isTop3 = entry.position <= 3
               const isCrowned = isPhaseFilter && phaseStatus === 'closed' && entry.position === 1
+              const badges = badgeMap ? badgeMap[entry.user_id] : undefined
 
               return (
                 <button
@@ -282,6 +357,7 @@ export function RankingScreen() {
                     }`}
                   >
                     {entry.name}
+                    <BadgeIcons badges={badges} />
                   </span>
 
                   <PositionDelta current={entry.position} prev={entry.prev_position} />

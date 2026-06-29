@@ -6,14 +6,84 @@ export type BadgeId =
   | 'champion_overall'
   | 'champion_brazil'
 
+type PhaseStatus = 'not_started' | 'in_progress' | 'closed'
+
+type PartialEntry = { user_id: number; position: number }
+
+// ---------------------------------------------------------------------------
+// Ranking-level badge map (central, one pass for all users)
+// ---------------------------------------------------------------------------
+
+export function computeBadgeMap(
+  groupRanking: PartialEntry[],
+  knockoutRanking: PartialEntry[],
+  overallRanking: PartialEntry[],
+  brazilRanking: PartialEntry[],
+): Map<number, BadgeId[]> {
+  const map = new Map<number, BadgeId[]>()
+  const award = (ranking: PartialEntry[], badge: BadgeId) => {
+    for (const e of ranking) {
+      if (e.position === 1) {
+        const list = map.get(e.user_id) ?? []
+        list.push(badge)
+        map.set(e.user_id, list)
+      }
+    }
+  }
+  award(groupRanking, 'champion_group')
+  award(knockoutRanking, 'champion_knockout')
+  award(overallRanking, 'champion_overall')
+  award(brazilRanking, 'champion_brazil')
+  return map
+}
+
+// ---------------------------------------------------------------------------
+// Champions map (mural)
+// ---------------------------------------------------------------------------
+
+export type ChampionEntry = { name: string; total_points: number }
+
+export type ChampionsMap = {
+  overall: ChampionEntry[] | null    // null = fase ainda não fechou
+  group: ChampionEntry[] | null
+  knockout: ChampionEntry[] | null
+  brazil: ChampionEntry[] | null
+  tournament: ChampionEntry[] | null
+}
+
+type NamedEntry = { position: number; name: string; total_points: number }
+
+function championsFrom(ranking: NamedEntry[]): ChampionEntry[] {
+  return ranking
+    .filter((e) => e.position === 1)
+    .map((e) => ({ name: e.name, total_points: e.total_points }))
+}
+
+export function computeChampionsMap(
+  groupStatus: PhaseStatus,
+  knockoutStatus: PhaseStatus,
+  finalLocked: boolean,
+  brazilEliminated: boolean,
+  tournamentStatus: 'not_started' | 'closed',
+  groupRanking: NamedEntry[],
+  knockoutRanking: NamedEntry[],
+  overallRanking: NamedEntry[],
+  brazilRanking: NamedEntry[],
+  tournamentRanking: NamedEntry[],
+): ChampionsMap {
+  return {
+    group:      groupStatus === 'closed'    ? championsFrom(groupRanking)    : null,
+    knockout:   knockoutStatus === 'closed' ? championsFrom(knockoutRanking) : null,
+    overall:    finalLocked                 ? championsFrom(overallRanking)  : null,
+    brazil:     brazilEliminated            ? championsFrom(brazilRanking)   : null,
+    tournament: tournamentStatus === 'closed' ? championsFrom(tournamentRanking) : null,
+  }
+}
+
 export type BadgeEntry = {
   id: BadgeId
   label: string
 }
-
-type PhaseStatus = 'not_started' | 'in_progress' | 'closed'
-
-type PartialEntry = { user_id: number; position: number }
 
 export type BadgeCriteria = {
   userId: number

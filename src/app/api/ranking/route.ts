@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireUser } from '@/lib/server/auth'
-import { getRanking, getTournamentRanking } from '@/lib/scoring/ranking'
+import { getRanking } from '@/lib/scoring/ranking'
+import { getActiveBadgesAndChampions } from '@/lib/scoring/badges'
 import { getPhaseStatus } from '@/lib/notifications/queries'
 import type { PhaseStatus } from '@/lib/notifications/queries'
 
@@ -12,9 +13,17 @@ export async function GET(req: NextRequest) {
 
   const mode = req.nextUrl.searchParams.get('mode')
 
+  // Badges + champions (+ tournament ranking) computed once per request, shared
+  const badgesPromise = getActiveBadgesAndChampions()
+
   if (mode === 'tournament') {
-    const { ranking, phase_status } = await getTournamentRanking()
-    return NextResponse.json({ ranking, phase_status })
+    const { badge_map: rawMap, champions, tournament_ranking, tournament_phase_status } = await badgesPromise
+    return NextResponse.json({
+      ranking: tournament_ranking,
+      phase_status: tournament_phase_status,
+      badge_map: Object.fromEntries(rawMap),
+      champions,
+    })
   }
 
   const stagesParam = req.nextUrl.searchParams.get('stages')
@@ -24,10 +33,16 @@ export async function GET(req: NextRequest) {
     if (parsed.length > 0) stages = parsed
   }
 
-  const [ranking, phase_status] = await Promise.all([
+  const [ranking, phase_status, { badge_map: rawMap, champions }] = await Promise.all([
     getRanking(stages),
     stages ? getPhaseStatus(stages) : Promise.resolve(null as PhaseStatus | null),
+    badgesPromise,
   ])
 
-  return NextResponse.json({ ranking, phase_status })
+  return NextResponse.json({
+    ranking,
+    phase_status,
+    badge_map: Object.fromEntries(rawMap),
+    champions,
+  })
 }

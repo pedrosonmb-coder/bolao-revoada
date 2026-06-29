@@ -4,13 +4,15 @@ import useSWR from 'swr'
 import { swrFetcher } from '@/lib/api/client'
 import type { RankingEntry, UserDetail } from '@/lib/scoring/ranking'
 import type { Distribution, MatchResult } from '@/lib/scoring/full-ranking-helpers'
-import type { BadgeEntry } from '@/lib/scoring/badges'
+import type { BadgeEntry, BadgeId, ChampionsMap } from '@/lib/scoring/badges'
 
-export type { BadgeEntry }
+export type { BadgeEntry, BadgeId, ChampionsMap }
 
 type RankingResponse = {
   ranking: RankingEntry[]
   phase_status: 'not_started' | 'in_progress' | 'closed' | null
+  badge_map: Record<number, BadgeId[]>
+  champions: ChampionsMap
 }
 
 export type MatchEntry = {
