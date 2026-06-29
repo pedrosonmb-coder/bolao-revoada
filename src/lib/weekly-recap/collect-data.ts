@@ -85,6 +85,7 @@ export type WeeklyRecapData = {
   bestGuess: GuessHighlight | null
   worstGuess: WorstGuess | null
   upcomingMatches: UpcomingMatch[]
+  weeklyPoints: Record<number, number>  // user_id → points earned in this window
 }
 
 export async function collectWeeklyRecapData(
@@ -192,6 +193,13 @@ export async function collectWeeklyRecapData(
     ),
   ).then((arrays) => arrays.flat())
 
+  // Pontos ganhos na semana por usuário (janela startUtc..endUtc)
+  const weeklyPoints: Record<number, number> = {}
+  for (const pred of weekPredictions) {
+    const pts = pred.points_awarded ?? 0
+    weeklyPoints[pred.user_id] = (weeklyPoints[pred.user_id] ?? 0) + pts
+  }
+
   // Melhor palpite: maior points_awarded
   let bestGuess: GuessHighlight | null = null
   let bestPoints = -1
@@ -292,5 +300,6 @@ export async function collectWeeklyRecapData(
     bestGuess,
     worstGuess,
     upcomingMatches,
+    weeklyPoints,
   }
 }

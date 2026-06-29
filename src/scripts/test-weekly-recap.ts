@@ -13,8 +13,7 @@ process.env.NOTIFICATIONS_DRY_RUN = 'true'
 
 import { getRecapWindow } from '@/lib/weekly-recap/window'
 import { collectWeeklyRecapData } from '@/lib/weekly-recap/collect-data'
-import { buildRecapPrompt } from '@/lib/weekly-recap/build-prompt'
-import { generateWeeklyRecap } from '@/lib/weekly-recap/generate'
+import { buildRecapMessage } from '@/lib/weekly-recap/build-recap-message'
 import type { WeeklyRecapData } from '@/lib/weekly-recap/collect-data'
 
 const USE_MOCK = process.argv.includes('--mock-data')
@@ -146,6 +145,17 @@ const MOCK_DATA: WeeklyRecapData = {
       city: 'Miami',
     },
   ],
+  weeklyPoints: {
+    1: 75,  // A
+    3: 55,  // C
+    2: 70,  // B
+    6: 55,  // F
+    4: 60,  // D
+    5: 40,  // E
+    7: 40,  // G
+    9: 50,  // I
+    8: 20,  // H
+  },
 }
 
 // ---------------------------------------------------------------------------
@@ -181,32 +191,11 @@ async function main() {
     console.log(`Participantes: ${data.allUsers.length}`)
   }
 
-  // Exibe prompt completo
-  const { system, user } = buildRecapPrompt(data)
-  console.log('\n--- SYSTEM PROMPT ---')
-  console.log(system)
-  console.log('\n--- USER PROMPT ---')
-  console.log(user)
-  console.log('--- FIM DO PROMPT ---\n')
-  console.log(`Tokens estimados (prompt): ~${Math.round((system.length + user.length) / 4)} tokens\n`)
-
-  console.log('Chamando Anthropic API...')
-  const startMs = Date.now()
-  const result = await generateWeeklyRecap(data)
-  const elapsed = Date.now() - startMs
-
-  if ('error' in result) {
-    console.error(`\n[ERRO] Falha na geração: ${result.error}`)
-    process.exit(1)
-  }
-
-  console.log('\n--- TEXTO GERADO ---')
-  console.log(result.text)
-  console.log('--- FIM DO TEXTO ---\n')
-  console.log(`Tokens de entrada : ${result.tokensIn}`)
-  console.log(`Tokens de saída   : ${result.tokensOut}`)
-  console.log(`Custo estimado    : $${result.costUsd.toFixed(6)} USD`)
-  console.log(`Latência total    : ${elapsed}ms`)
+  const text = buildRecapMessage(data)
+  console.log('\n--- MENSAGEM GERADA ---')
+  console.log(text)
+  console.log('--- FIM DA MENSAGEM ---\n')
+  console.log(`Tamanho: ${text.length} caracteres`)
 }
 
 main().catch((err) => {

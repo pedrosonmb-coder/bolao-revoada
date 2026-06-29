@@ -3,11 +3,11 @@ import { verifyCronAuth } from '@/lib/cron-auth'
 import { env } from '@/lib/env'
 import { getRecapWindow } from '@/lib/weekly-recap/window'
 import { collectWeeklyRecapData } from '@/lib/weekly-recap/collect-data'
-import { generateWeeklyRecap } from '@/lib/weekly-recap/generate'
+import { buildRecapMessage } from '@/lib/weekly-recap/build-recap-message'
 import { sendNotification } from '@/lib/notifications/send'
 
 export const runtime = 'nodejs'
-export const maxDuration = 60
+export const maxDuration = 30
 
 export async function GET(req: NextRequest) {
   const authError = verifyCronAuth(req)
@@ -46,35 +46,16 @@ export async function GET(req: NextRequest) {
     }),
   )
 
-  // 2. Gera texto via Anthropic
-  const result = await generateWeeklyRecap(data)
-
-  if ('error' in result) {
-    console.error(
-      JSON.stringify({
-        event: 'weekly_recap_generation_failed',
-        error: result.error,
-        isoYear,
-        isoWeek,
-      }),
-    )
-    // Sem fallback genérico — não envia mensagem se a IA falhou
-    return NextResponse.json({ ok: false, error: result.error, isoWeek }, { status: 200 })
-  }
+  // 2. Monta mensagem determinística
+  const text = buildRecapMessage(data)
 
   // 3. Envia notificação com lock idempotente
   const sendResult = await sendNotification({
     type: 'weekly_recap',
     key: lockKey,
     chatId: Number(env.TELEGRAM_GROUP_CHAT_ID),
-    text: result.text,
-    payload: {
-      isoYear,
-      isoWeek,
-      tokens_in: result.tokensIn,
-      tokens_out: result.tokensOut,
-      cost_usd: result.costUsd,
-    },
+    text,
+    payload: { isoYear, isoWeek },
   })
 
   console.log(
@@ -84,18 +65,12 @@ export async function GET(req: NextRequest) {
       reason: 'reason' in sendResult ? sendResult.reason : undefined,
       isoYear,
       isoWeek,
-      tokens_in: result.tokensIn,
-      tokens_out: result.tokensOut,
-      cost_usd: result.costUsd.toFixed(6),
-      latency_ms: result.latencyMs,
     }),
   )
 
   return NextResponse.json({
     ok: true,
     isoWeek,
-    tokensUsed: result.tokensIn + result.tokensOut,
-    costUsd: result.costUsd,
     sent: sendResult.sent,
   })
 }
