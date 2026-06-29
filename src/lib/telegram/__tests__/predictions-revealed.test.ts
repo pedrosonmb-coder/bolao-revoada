@@ -76,3 +76,44 @@ describe('predictionsRevealedMessage', () => {
     expect(text).not.toContain('& <Co>')
   })
 })
+
+describe('predictionsRevealedMessage — quem passa (mata-mata)', () => {
+  it('empate com qualified=home → mostra nome pt-BR do time da casa', () => {
+    const rows = [{ name: 'João', home: 1, away: 1, qualified: 'home' }]
+    const text = predictionsRevealedMessage(match, rows, [])
+    // BRA é home → nome pt-BR = "Brasil"
+    expect(text).toContain('João 1-1 (passa: Brasil)')
+  })
+
+  it('empate com qualified=away → mostra nome pt-BR do time visitante', () => {
+    const rows = [{ name: 'João', home: 1, away: 1, qualified: 'away' }]
+    const text = predictionsRevealedMessage(match, rows, [])
+    // ARG é away → nome pt-BR = "Argentina"
+    expect(text).toContain('João 1-1 (passa: Argentina)')
+  })
+
+  it('empate SEM qualified → formato simples, sem "(passa:)"', () => {
+    const rows = [{ name: 'João', home: 1, away: 1 }]
+    const text = predictionsRevealedMessage(match, rows, [])
+    expect(text).toContain('João 1-1')
+    expect(text).not.toContain('passa:')
+  })
+
+  it('não-empate com qualified → NÃO mostra "(passa:)"', () => {
+    const rows = [{ name: 'João', home: 2, away: 1, qualified: 'home' }]
+    const text = predictionsRevealedMessage(match, rows, [])
+    expect(text).toContain('João 2-1')
+    expect(text).not.toContain('passa:')
+  })
+
+  it('mistura empate+qualified e vitória no mesmo reveal', () => {
+    const rows = [
+      { name: 'Ana', home: 2, away: 1 },
+      { name: 'João', home: 1, away: 1, qualified: 'away' },
+    ]
+    const text = predictionsRevealedMessage(match, rows, [])
+    expect(text).toContain('Ana 2-1')
+    expect(text).not.toContain('Ana 2-1 (passa:)')
+    expect(text).toContain('João 1-1 (passa: Argentina)')
+  })
+})

@@ -22,6 +22,7 @@ const TEAMS: Record<string, TeamInfo> = {
   COL: { name: 'Colômbia',         iso2: 'CO' },
   CPV: { name: 'Cabo Verde',       iso2: 'CV' },
   CRO: { name: 'Croácia',          iso2: 'HR' },
+  CUR: { name: 'Curaçao',          iso2: 'CW' }, // football-data.org usa CUR em alguns jogos
   CUW: { name: 'Curaçao',          iso2: 'CW' },
   CZE: { name: 'Tchéquia',         iso2: 'CZ' },
   ECU: { name: 'Equador',          iso2: 'EC' },

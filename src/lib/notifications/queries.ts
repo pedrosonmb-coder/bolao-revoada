@@ -204,6 +204,7 @@ export async function getPredictionsForReveal(
       user_id: predictions.user_id,
       home_score: predictions.home_score,
       away_score: predictions.away_score,
+      qualified_team_code: predictions.qualified_team_code,
     })
     .from(predictions)
     .where(eq(predictions.match_id, matchId))
@@ -214,7 +215,12 @@ export async function getPredictionsForReveal(
     .filter((u) => predByUser.has(u.id))
     .map((u) => {
       const p = predByUser.get(u.id)!
-      return { name: getDisplayName(u), home: p.home_score, away: p.away_score }
+      return {
+        name: getDisplayName(u),
+        home: p.home_score,
+        away: p.away_score,
+        qualified: p.qualified_team_code ?? undefined,
+      }
     })
     .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
 

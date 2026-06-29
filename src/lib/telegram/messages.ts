@@ -327,7 +327,7 @@ function escapeHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
-export type PredictionRow = { name: string; home: number; away: number }
+export type PredictionRow = { name: string; home: number; away: number; qualified?: string }
 
 export function predictionsRevealedMessage(
   match: { home_team_code: string; away_team_code: string },
@@ -341,7 +341,15 @@ export function predictionsRevealedMessage(
 
   const header = `🔓 Palpites revelados\n${hf} ${hName} x ${aName} ${af}`
 
-  const items = rows.map((r) => `${escapeHtml(r.name)} ${r.home}-${r.away}`)
+  const items = rows.map((r) => {
+    const isDraw = r.home === r.away
+    let suffix = ''
+    if (isDraw && r.qualified) {
+      const qualCode = r.qualified === 'home' ? match.home_team_code : match.away_team_code
+      suffix = ` (passa: ${getTeamDisplay(qualCode).name})`
+    }
+    return `${escapeHtml(r.name)} ${r.home}-${r.away}${suffix}`
+  })
   const bodyLines: string[] = []
   for (let i = 0; i < items.length; i += 4) {
     bodyLines.push(items.slice(i, i + 4).join('  ·  '))

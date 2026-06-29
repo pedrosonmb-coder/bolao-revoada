@@ -1,10 +1,10 @@
 'use client'
 
+import { getTeamDisplay } from '@/lib/teams'
+
 type ClassificationSelectorProps = {
   homeTeamCode: string
-  homeTeamName: string
   awayTeamCode: string
-  awayTeamName: string
   value: 'home' | 'away' | null
   onChange: (value: 'home' | 'away') => void
   disabled?: boolean
@@ -12,20 +12,21 @@ type ClassificationSelectorProps = {
 
 export function ClassificationSelector({
   homeTeamCode,
-  homeTeamName,
   awayTeamCode,
-  awayTeamName,
   value,
   onChange,
   disabled = false,
 }: ClassificationSelectorProps) {
+  const homeName = getTeamDisplay(homeTeamCode).name
+  const awayName = getTeamDisplay(awayTeamCode).name
+
   return (
     <div className="mt-3 pt-3 border-t border-(--color-border-base)">
       <p className="text-xs text-(--color-text-secondary) mb-2">Quem se classifica?</p>
       <div className="flex gap-2">
         {[
-          { code: 'home', name: homeTeamName } as const,
-          { code: 'away', name: awayTeamName } as const,
+          { code: 'home', name: homeName } as const,
+          { code: 'away', name: awayName } as const,
         ].map(({ code, name }) => (
           <button
             key={code}

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getTeamName, getAllTeams } from '../teams'
+import { getTeamName, getAllTeams, getTeamDisplay } from '../teams'
 
 describe('getTeamName', () => {
   it('retorna nome para TLA válido', () => {
@@ -54,5 +54,21 @@ describe('getAllTeams', () => {
     const teams = getAllTeams()
     const eng = teams.find((t) => t.tla === 'ENG')
     expect(eng?.flag).toBe('🏴󠁧󠁢󠁥󠁮󠁧󠁿')
+  })
+})
+
+describe('getTeamDisplay — aliases CUR/CUW (Curaçao)', () => {
+  it('CUW retorna Curaçao com bandeira 🇨🇼', () => {
+    const { name, flag } = getTeamDisplay('CUW')
+    expect(name).toBe('Curaçao')
+    expect(flag).toBe('🇨🇼')
+  })
+
+  it('CUR retorna Curaçao com bandeira 🇨🇼 (não fallback)', () => {
+    const { name, flag } = getTeamDisplay('CUR')
+    expect(name).toBe('Curaçao')
+    expect(flag).toBe('🇨🇼')
+    expect(flag).not.toBe('🏳️')
+    expect(name).not.toBe('CUR')
   })
 })

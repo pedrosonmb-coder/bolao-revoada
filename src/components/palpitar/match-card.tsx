@@ -183,9 +183,7 @@ export function MatchCard({ match, prediction, onSaved, isPaid = true, targetMat
       {isKnockout && isDraw && (
         <ClassificationSelector
           homeTeamCode={match.home_team_code}
-          homeTeamName={match.home_team_name}
           awayTeamCode={match.away_team_code}
-          awayTeamName={match.away_team_name}
           value={qualifiedCode}
           onChange={handleQtcChange}
           disabled={disabled}

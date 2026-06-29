@@ -47,6 +47,8 @@ export const countryFlags: Record<string, string> = {
   BOL: '🇧🇴',
   // Grupo L
   CRO: '🇭🇷',
+  CUR: '🇨🇼',
+  CUW: '🇨🇼',
   SVK: '🇸🇰',
   TUR: '🇹🇷',
   // Outros times qualificados
