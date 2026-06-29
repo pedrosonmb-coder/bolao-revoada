@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useTelegram } from '@/components/providers/telegram-provider'
 import { useRanking } from '@/hooks/use-ranking'
 import type { BadgeId, ChampionsMap } from '@/hooks/use-ranking'
+import type { RankingEntry } from '@/lib/scoring/ranking'
 import { UserDetailDrawer } from './user-detail-drawer'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -160,6 +161,17 @@ export function RankingScreen() {
   const { user: me } = useTelegram()
   const [activeTab, setActiveTab] = useState<TabId>('geral')
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null)
+  const [selectedEntry, setSelectedEntry] = useState<RankingEntry | null>(null)
+
+  function selectUser(entry: RankingEntry) {
+    setSelectedUserId(entry.user_id)
+    setSelectedEntry(entry)
+  }
+
+  function handleClose() {
+    setSelectedUserId(null)
+    setSelectedEntry(null)
+  }
 
   const activeTabDef = TABS.find((t) => t.id === activeTab)!
   const { data, isLoading } = useRanking({ stages: activeTabDef.stages, mode: activeTabDef.mode })
@@ -271,7 +283,7 @@ export function RankingScreen() {
                       className={`w-full flex items-center gap-3 p-3 rounded-xl text-left transition-opacity active:opacity-70 ${
                         isMe ? 'bg-(--color-accent-primary) text-white' : 'bg-(--color-bg-surface)'
                       }`}
-                      onClick={() => setSelectedUserId(entry.user_id)}
+                      onClick={() => selectUser(entry)}
                     >
                       <span className="w-6 shrink-0" />
 
@@ -317,7 +329,7 @@ export function RankingScreen() {
                       ? 'bg-(--color-accent-primary) text-white'
                       : 'bg-(--color-bg-surface)'
                   }`}
-                  onClick={() => setSelectedUserId(entry.user_id)}
+                  onClick={() => selectUser(entry)}
                 >
                   <span className="w-6 flex items-center justify-center shrink-0">
                     {isTop3 ? (
@@ -378,7 +390,10 @@ export function RankingScreen() {
 
       <UserDetailDrawer
         userId={selectedUserId}
-        onClose={() => setSelectedUserId(null)}
+        entry={selectedEntry}
+        stages={activeTabDef.stages}
+        mode={activeTabDef.mode}
+        onClose={handleClose}
       />
     </div>
   )
