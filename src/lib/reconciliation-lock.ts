@@ -4,9 +4,18 @@
 export const LOCK_THRESHOLD = 10
 export const LOCK_THRESHOLD_FLOOR = 3
 
+// Time-based fallback lock: used when the API never transitions to 'finished'.
+// Validated against ESP×KSA (5-0 errado, 12 min) — neither threshold was met.
+export const TIME_LOCK_KICKOFF_HOURS = 3
+export const TIME_LOCK_STABILITY_MINUTES = 30
+
 export type LockDecision =
   | { shouldLock: true; lockScore: { home: number; away: number } }
   | { shouldLock: false; lockScore: null }
+
+export type TimeLockDecision =
+  | { shouldLock: true; lockScore: { home: number; away: number; home_pen: number | null; away_pen: number | null } }
+  | { shouldLock: false; lockScore: null; reason: string }
 
 /**
  * Pure function — determines whether to lock based on status, source reliability,
@@ -48,4 +57,61 @@ export function computeLockDecision(params: {
   if (!allAgree) return { shouldLock: false, lockScore: null }
 
   return { shouldLock: true, lockScore: { home: home_score, away: away_score } }
+}
+
+/**
+ * Pure function — fallback lock for when the API is stuck in 'live' and never sends
+ * 'finished'. Requires ALL of:
+ *   1. kickoffAt >= TIME_LOCK_KICKOFF_HOURS ago (covers 90min + ET + pens + margin)
+ *   2. all provided snapshots agree on the same score (including pen scores)
+ *   3. time span between oldest and newest snapshot >= TIME_LOCK_STABILITY_MINUTES
+ *   4. at least LOCK_THRESHOLD_FLOOR snapshots
+ *
+ * Does NOT modify computeLockDecision — the normal 'finished'-status path is unchanged.
+ */
+export function computeTimeLockDecision(params: {
+  kickoffAt: Date
+  now: Date
+  recentNonNullSnapshots: Array<{
+    home_score: number
+    away_score: number
+    home_score_pen: number | null
+    away_score_pen: number | null
+    fetched_at: Date
+  }>
+}): TimeLockDecision {
+  const { kickoffAt, now, recentNonNullSnapshots } = params
+
+  const elapsedMs = now.getTime() - kickoffAt.getTime()
+  if (elapsedMs < TIME_LOCK_KICKOFF_HOURS * 60 * 60 * 1000) {
+    return { shouldLock: false, lockScore: null, reason: 'kickoff_too_recent' }
+  }
+
+  if (recentNonNullSnapshots.length < LOCK_THRESHOLD_FLOOR) {
+    return { shouldLock: false, lockScore: null, reason: 'insufficient_snapshots' }
+  }
+
+  const { home_score, away_score, home_score_pen, away_score_pen } = recentNonNullSnapshots[0]
+  const allAgree = recentNonNullSnapshots.every(
+    (s) =>
+      s.home_score === home_score &&
+      s.away_score === away_score &&
+      s.home_score_pen === home_score_pen &&
+      s.away_score_pen === away_score_pen
+  )
+  if (!allAgree) {
+    return { shouldLock: false, lockScore: null, reason: 'score_unstable' }
+  }
+
+  const newest = recentNonNullSnapshots[0].fetched_at.getTime()
+  const oldest = recentNonNullSnapshots[recentNonNullSnapshots.length - 1].fetched_at.getTime()
+  const spanMs = newest - oldest
+  if (spanMs < TIME_LOCK_STABILITY_MINUTES * 60 * 1000) {
+    return { shouldLock: false, lockScore: null, reason: 'span_too_short' }
+  }
+
+  return {
+    shouldLock: true,
+    lockScore: { home: home_score, away: away_score, home_pen: home_score_pen, away_pen: away_score_pen },
+  }
 }
