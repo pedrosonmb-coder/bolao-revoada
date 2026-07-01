@@ -8,11 +8,6 @@ const twoRows = [
   { name: 'Pedro', home: 1, away: 0 },
 ]
 
-// BRT = UTC-3: 16h42 UTC → 13h42 BRT
-const TS_1342_BRT = new Date('2026-06-23T16:42:00Z')
-// 21h05 UTC → 18h05 BRT
-const TS_1805_BRT = new Date('2026-06-23T21:05:00Z')
-
 describe('predictionsRevealedMessage', () => {
   it('retorna string vazia quando rows está vazio (sem faltantes)', () => {
     expect(predictionsRevealedMessage(match, [], [])).toBe('')
@@ -81,40 +76,6 @@ describe('predictionsRevealedMessage', () => {
   })
 })
 
-describe('predictionsRevealedMessage — timestamp (Ideia C)', () => {
-  it('exibe horário em BRT quando palpited_at presente', () => {
-    const rows = [{ name: 'Ana', home: 2, away: 1, palpited_at: TS_1342_BRT }]
-    const text = predictionsRevealedMessage(match, rows, [])
-    expect(text).toContain('Ana: 2-1 · 13h42')
-  })
-
-  it('horário correto para minuto não-zero (18h05)', () => {
-    const rows = [{ name: 'Bruno', home: 1, away: 0, palpited_at: TS_1805_BRT }]
-    const text = predictionsRevealedMessage(match, rows, [])
-    expect(text).toContain('Bruno: 1-0 · 18h05')
-  })
-
-  it('sem timestamp quando palpited_at ausente', () => {
-    const rows = [{ name: 'Carlos', home: 3, away: 0 }]
-    const text = predictionsRevealedMessage(match, rows, [])
-    expect(text).toContain('Carlos: 3-0')
-    expect(text).not.toContain('·')
-  })
-
-  it('sem timestamp quando palpited_at é null', () => {
-    const rows = [{ name: 'Dora', home: 2, away: 0, palpited_at: null }]
-    const text = predictionsRevealedMessage(match, rows, [])
-    expect(text).toContain('Dora: 2-0')
-    expect(text).not.toContain('·')
-  })
-
-  it('timestamp BRT: meia-noite UTC → 21h00 BRT (dia anterior)', () => {
-    // 00h00 UTC = 21h00 BRT do dia anterior
-    const rows = [{ name: 'Eva', home: 0, away: 0, palpited_at: new Date('2026-06-23T00:00:00Z') }]
-    const text = predictionsRevealedMessage(match, rows, [])
-    expect(text).toContain('Eva: 0-0 · 21h00')
-  })
-})
 
 describe('predictionsRevealedMessage — quem passa (mata-mata)', () => {
   it('empate com qualified=home → mostra nome pt-BR do time da casa', () => {
@@ -154,26 +115,21 @@ describe('predictionsRevealedMessage — quem passa (mata-mata)', () => {
     expect(text).toContain('João: 1-1 (passa: Argentina)')
   })
 
-  it('"passa" aparece antes do timestamp', () => {
-    const rows = [{ name: 'João', home: 1, away: 1, qualified: 'home', palpited_at: TS_1342_BRT }]
-    const text = predictionsRevealedMessage(match, rows, [])
-    expect(text).toContain('João: 1-1 (passa: Brasil) · 13h42')
-  })
 })
 
 describe('predictionsRevealedMessage — formato colável (texto puro)', () => {
   it('não contém tags HTML no corpo da mensagem', () => {
     const rows = [
-      { name: 'Ana', home: 2, away: 1, palpited_at: TS_1342_BRT },
-      { name: 'Bruno', home: 1, away: 1, qualified: 'away', palpited_at: TS_1805_BRT },
+      { name: 'Ana', home: 2, away: 1 },
+      { name: 'Bruno', home: 1, away: 1, qualified: 'away' },
     ]
     const text = predictionsRevealedMessage(match, rows, ['Igor'])
     expect(text).not.toMatch(/<[^>]+>/)
   })
 
-  it('linha completa: Nome: h-a (passa: Time) · HHhMM', () => {
-    const rows = [{ name: 'Carlos', home: 0, away: 0, qualified: 'home', palpited_at: TS_1342_BRT }]
+  it('linha completa: Nome: h-a (passa: Time)', () => {
+    const rows = [{ name: 'Carlos', home: 0, away: 0, qualified: 'home' }]
     const text = predictionsRevealedMessage(match, rows, [])
-    expect(text).toContain('Carlos: 0-0 (passa: Brasil) · 13h42')
+    expect(text).toContain('Carlos: 0-0 (passa: Brasil)')
   })
 })
