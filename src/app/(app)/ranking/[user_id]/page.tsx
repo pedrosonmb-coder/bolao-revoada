@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { ChevronLeft } from 'lucide-react'
 import { useUserFull } from '@/hooks/use-ranking'
@@ -7,6 +8,7 @@ import { getTeamDisplay } from '@/lib/teams'
 import { Skeleton } from '@/components/ui/skeleton'
 import { pointsColor } from '@/lib/scoring/points-color'
 import { toChartPoints, computeYRange, xLabelStep } from '@/lib/scoring/position-chart'
+import { deriveBreakdown } from '@/lib/scoring/multipliers'
 import type { Distribution, MatchResult } from '@/lib/scoring/full-ranking-helpers'
 import type { MatchEntry, PositionPoint } from '@/hooks/use-ranking'
 
@@ -261,40 +263,78 @@ function PositionChart({ history, totalParticipants }: { history: PositionPoint[
   )
 }
 
+const STAGE_NAME: Record<string, string> = {
+  group: 'Grupos',
+  r32: 'Oitavas',
+  r16: 'Oitavas de final',
+  qf: 'Quartas',
+  sf: 'Semifinais',
+  '3rd': '3º lugar',
+  final: 'Final',
+}
+
 function CampanhaRow({ m }: { m: MatchEntry }) {
+  const [open, setOpen] = useState(false)
   const home = getTeamDisplay(m.home_team_code)
   const away = getTeamDisplay(m.away_team_code)
   const hasScore = m.home_score != null && m.away_score != null
   const hasPalpite = m.palpite_home != null
+  const isScored = hasPalpite && m.points_awarded != null && m.base_points != null
   const color = hasPalpite ? pointsColor(m.base_points ?? 0) : 'var(--color-text-secondary)'
 
+  // Breakdown derivado client-side: multiplier + bonus = points_awarded - Math.round(base × mult)
+  let breakdownLine: string | null = null
+  if (isScored) {
+    const { multiplier, bonus } = deriveBreakdown(m.base_points!, m.stage, m.points_awarded!)
+    const stageName = STAGE_NAME[m.stage] ?? m.stage
+    breakdownLine = bonus > 0
+      ? `${m.base_points} base × ${multiplier} (${stageName}) + ${bonus} (classificado) = ${m.points_awarded}`
+      : `${m.base_points} base × ${multiplier} (${stageName}) = ${m.points_awarded}`
+  }
+
   return (
-    <div className="flex items-center gap-3 py-2.5 border-b border-(--color-border-base) last:border-0">
-      <div
-        className="w-10 text-center font-[family-name:var(--font-tight)] font-black text-base flex-shrink-0"
-        style={{ color }}
-      >
-        {hasPalpite ? m.points_awarded : 0}
+    <div
+      className="py-2.5 border-b border-(--color-border-base) last:border-0"
+      onClick={() => { if (breakdownLine) setOpen((o) => !o) }}
+      style={{ cursor: breakdownLine ? 'pointer' : 'default' }}
+    >
+      <div className="flex items-center gap-3">
+        <div
+          className="w-10 text-center font-[family-name:var(--font-tight)] font-black text-base flex-shrink-0"
+          style={{ color }}
+        >
+          {hasPalpite ? m.points_awarded : 0}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <p className="text-sm text-(--color-text-primary) truncate">
+              {home.flag} {home.name} × {away.name} {away.flag}
+            </p>
+            {m.override_by_admin && (
+              <span className="text-xs text-(--color-text-secondary) shrink-0">✎ corrigido</span>
+            )}
+          </div>
+          <p className="text-xs text-(--color-text-secondary) mt-0.5">
+            {hasScore ? (
+              <>
+                <span className="font-medium">{m.home_score}–{m.away_score}</span>
+                {hasPalpite ? (
+                  <>{' · palpite '}<span>{m.palpite_home}–{m.palpite_away}</span></>
+                ) : (
+                  <>{' · '}<span className="italic">Não palpitado</span></>
+                )}
+              </>
+            ) : (
+              hasPalpite ? 'Aguardando resultado' : <span className="italic">Não palpitado</span>
+            )}
+          </p>
+        </div>
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm text-(--color-text-primary) truncate">
-          {home.flag} {home.name} × {away.name} {away.flag}
+      {open && breakdownLine && (
+        <p className="text-xs text-(--color-text-secondary) mt-1.5 ml-[52px] font-mono leading-tight">
+          {breakdownLine}
         </p>
-        <p className="text-xs text-(--color-text-secondary) mt-0.5">
-          {hasScore ? (
-            <>
-              <span className="font-medium">{m.home_score}–{m.away_score}</span>
-              {hasPalpite ? (
-                <>{' · palpite '}<span>{m.palpite_home}–{m.palpite_away}</span></>
-              ) : (
-                <>{' · '}<span className="italic">Não palpitado</span></>
-              )}
-            </>
-          ) : (
-            hasPalpite ? 'Aguardando resultado' : <span className="italic">Não palpitado</span>
-          )}
-        </p>
-      </div>
+      )}
     </div>
   )
 }

@@ -23,6 +23,7 @@ export type MatchEntry = {
   away_team_code: string
   home_score: number | null
   away_score: number | null
+  override_by_admin: boolean
   palpite_home: number | null
   palpite_away: number | null
   points_awarded: number | null
