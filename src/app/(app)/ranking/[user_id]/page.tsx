@@ -265,7 +265,8 @@ function CampanhaRow({ m }: { m: MatchEntry }) {
   const home = getTeamDisplay(m.home_team_code)
   const away = getTeamDisplay(m.away_team_code)
   const hasScore = m.home_score != null && m.away_score != null
-  const color = pointsColor(m.base_points)
+  const hasPalpite = m.palpite_home != null
+  const color = hasPalpite ? pointsColor(m.base_points ?? 0) : 'var(--color-text-secondary)'
 
   return (
     <div className="flex items-center gap-3 py-2.5 border-b border-(--color-border-base) last:border-0">
@@ -273,7 +274,7 @@ function CampanhaRow({ m }: { m: MatchEntry }) {
         className="w-10 text-center font-[family-name:var(--font-tight)] font-black text-base flex-shrink-0"
         style={{ color }}
       >
-        {m.points_awarded}
+        {hasPalpite ? m.points_awarded : 0}
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm text-(--color-text-primary) truncate">
@@ -283,11 +284,14 @@ function CampanhaRow({ m }: { m: MatchEntry }) {
           {hasScore ? (
             <>
               <span className="font-medium">{m.home_score}–{m.away_score}</span>
-              {' · palpite '}
-              <span>{m.palpite_home}–{m.palpite_away}</span>
+              {hasPalpite ? (
+                <>{' · palpite '}<span>{m.palpite_home}–{m.palpite_away}</span></>
+              ) : (
+                <>{' · '}<span className="italic">Não palpitado</span></>
+              )}
             </>
           ) : (
-            'Aguardando resultado'
+            hasPalpite ? 'Aguardando resultado' : <span className="italic">Não palpitado</span>
           )}
         </p>
       </div>

@@ -1,6 +1,6 @@
 import { db } from '@/lib/db'
 import { users, predictions, tournamentPredictions, matches } from '@/lib/db/schema'
-import { eq, isNotNull, and } from 'drizzle-orm'
+import { eq, isNotNull, and, lt, sql, count } from 'drizzle-orm'
 import type { Match } from '@/lib/db/schema'
 import { getDisplayName } from '@/lib/display-name'
 import { buildPhaseRankingEntries } from './ranking-phase-builder'
@@ -139,6 +139,7 @@ export type UserDetail = {
   totals: { total_points: number; match_points: number; tournament_points: number; position: number }
   by_stage: { stage: string; points: number; matches_played: number; accuracy: number }[]
   achievements: { exact_scores: number; winners_correct: number }
+  closed_matches: { total: number; missed: number }
 }
 
 export async function getUserDetail(userId: number): Promise<UserDetail | null> {
@@ -149,12 +150,26 @@ export async function getUserDetail(userId: number): Promise<UserDetail | null> 
   const entry = ranking.find((e) => e.user_id === userId)
   if (!entry) return null
 
-  const userPreds = await db
-    .select()
-    .from(predictions)
-    .where(and(eq(predictions.user_id, userId), isNotNull(predictions.computed_at)))
+  const [userPreds, allMatches, closedMatchRow] = await Promise.all([
+    db
+      .select()
+      .from(predictions)
+      .where(and(eq(predictions.user_id, userId), isNotNull(predictions.computed_at))),
+    db.select().from(matches),
+    db
+      .select({
+        closed_total: count(),
+        missed: sql<number>`COUNT(CASE WHEN ${predictions.id} IS NULL THEN 1 END)`,
+      })
+      .from(matches)
+      .leftJoin(
+        predictions,
+        and(eq(predictions.match_id, matches.id), eq(predictions.user_id, userId))
+      )
+      .where(lt(matches.predictions_close_at, sql`unixepoch()`))
+      .get(),
+  ])
 
-  const allMatches = await db.select().from(matches)
   const matchById = new Map(allMatches.map((m: Match) => [m.id, m]))
 
   const byStage = new Map<string, { points: number; matches_played: number; correct: number }>()
@@ -198,6 +213,10 @@ export async function getUserDetail(userId: number): Promise<UserDetail | null> 
     achievements: {
       exact_scores: entry.exact_scores,
       winners_correct: entry.winners_correct,
+    },
+    closed_matches: {
+      total: closedMatchRow?.closed_total ?? 0,
+      missed: closedMatchRow?.missed ?? 0,
     },
   }
 }

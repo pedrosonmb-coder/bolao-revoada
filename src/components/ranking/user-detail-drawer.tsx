@@ -199,6 +199,22 @@ export function UserDetailDrawer({ userId, entry, stages, mode, onClose }: Props
               </div>
             )}
 
+            {/* Disciplina de palpite — shown when data is available and there are closed matches */}
+            {data?.closed_matches && data.closed_matches.total > 0 && (
+              <p
+                className="text-xs text-center"
+                style={{
+                  color: data.closed_matches.missed === 0
+                    ? 'var(--color-status-success)'
+                    : 'var(--color-text-secondary)',
+                }}
+              >
+                {data.closed_matches.missed === 0
+                  ? `Palpitou todos os ${data.closed_matches.total} jogos ✓`
+                  : `Palpitou ${data.closed_matches.total - data.closed_matches.missed} de ${data.closed_matches.total} jogos`}
+              </p>
+            )}
+
             <Link
               href={`/ranking/${userId}`}
               className="flex items-center justify-center gap-1 text-sm font-semibold text-(--color-accent-primary) py-1"

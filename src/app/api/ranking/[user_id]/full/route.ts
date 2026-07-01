@@ -27,7 +27,7 @@ export async function GET(
     return NextResponse.json({ error: 'user_id inválido' }, { status: 400 })
   }
 
-  const [detail, predRows, groupAvgRow, snapshotRows, badges, participantRow, closedMatchRow] = await Promise.all([
+  const [detail, predRows, groupAvgRow, snapshotRows, badges, participantRow, closedMatchRow, allClosedMatchRows] = await Promise.all([
     getUserDetail(userId),
     db
       .select({
@@ -76,6 +76,27 @@ export async function GET(
       )
       .where(lt(matches.predictions_close_at, sql`unixepoch()`))
       .get(),
+    db
+      .select({
+        match_id: matches.id,
+        stage: matches.stage,
+        kickoff_at: matches.kickoff_at,
+        home_team_code: matches.home_team_code,
+        away_team_code: matches.away_team_code,
+        home_score: matches.home_score,
+        away_score: matches.away_score,
+        palpite_home: predictions.home_score,
+        palpite_away: predictions.away_score,
+        points_awarded: predictions.points_awarded,
+        base_points: predictions.base_points,
+      })
+      .from(matches)
+      .leftJoin(
+        predictions,
+        and(eq(predictions.match_id, matches.id), eq(predictions.user_id, userId))
+      )
+      .where(lt(matches.predictions_close_at, sql`unixepoch()`))
+      .orderBy(asc(matches.kickoff_at)),
   ])
 
   if (!detail) {
@@ -106,7 +127,7 @@ export async function GET(
 
   return NextResponse.json({
     ...detail,
-    matches: predRows.map((p) => ({
+    matches: allClosedMatchRows.map((p) => ({
       match_id: p.match_id,
       stage: p.stage,
       kickoff_at: toISOString(p.kickoff_at),

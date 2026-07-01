@@ -23,10 +23,10 @@ export type MatchEntry = {
   away_team_code: string
   home_score: number | null
   away_score: number | null
-  palpite_home: number
-  palpite_away: number
-  points_awarded: number
-  base_points: number
+  palpite_home: number | null
+  palpite_away: number | null
+  points_awarded: number | null
+  base_points: number | null
 }
 
 export type PositionPoint = { date: string; position: number; points: number }
