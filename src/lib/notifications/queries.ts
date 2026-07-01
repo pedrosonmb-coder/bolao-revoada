@@ -205,6 +205,8 @@ export async function getPredictionsForReveal(
       home_score: predictions.home_score,
       away_score: predictions.away_score,
       qualified_team_code: predictions.qualified_team_code,
+      created_at: predictions.created_at,
+      updated_at: predictions.updated_at,
     })
     .from(predictions)
     .where(eq(predictions.match_id, matchId))
@@ -220,6 +222,7 @@ export async function getPredictionsForReveal(
         home: p.home_score,
         away: p.away_score,
         qualified: p.qualified_team_code ?? undefined,
+        palpited_at: p.updated_at ?? p.created_at,
       }
     })
     .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))

@@ -327,7 +327,22 @@ function escapeHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
-export type PredictionRow = { name: string; home: number; away: number; qualified?: string }
+// BRT = UTC-3 (Brasil aboliu horário de verão)
+function toBrtTime(ts: Date | null | undefined): string | null {
+  if (!ts) return null
+  const brt = new Date(ts.getTime() - 3 * 60 * 60 * 1000)
+  const h = brt.getUTCHours().toString().padStart(2, '0')
+  const m = brt.getUTCMinutes().toString().padStart(2, '0')
+  return `${h}h${m}`
+}
+
+export type PredictionRow = {
+  name: string
+  home: number
+  away: number
+  qualified?: string
+  palpited_at?: Date | null
+}
 
 export function predictionsRevealedMessage(
   match: { home_team_code: string; away_team_code: string },
@@ -348,14 +363,12 @@ export function predictionsRevealedMessage(
       const qualCode = r.qualified === 'home' ? match.home_team_code : match.away_team_code
       suffix = ` (passa: ${getTeamDisplay(qualCode).name})`
     }
-    return `${escapeHtml(r.name)} ${r.home}-${r.away}${suffix}`
+    const time = toBrtTime(r.palpited_at)
+    const timeStr = time ? ` · ${time}` : ''
+    return `${escapeHtml(r.name)}: ${r.home}-${r.away}${suffix}${timeStr}`
   })
-  const bodyLines: string[] = []
-  for (let i = 0; i < items.length; i += 4) {
-    bodyLines.push(items.slice(i, i + 4).join('  ·  '))
-  }
 
-  const parts = [header, '', ...bodyLines]
+  const parts = [header, '', ...items]
 
   if (missing.length > 0) {
     parts.push('', `Sem palpite: ${missing.map(escapeHtml).join(', ')}`)
