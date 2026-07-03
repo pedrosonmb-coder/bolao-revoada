@@ -5,6 +5,7 @@ import { matches, pollingLogs } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { applyWO } from '@/lib/scoring/apply-wo'
+import { notifyAfterLock } from '@/lib/notifications/notify-after-lock'
 
 const bodySchema = z.object({
   reason: z.string().min(1),
@@ -53,6 +54,13 @@ export async function POST(
   }).where(eq(matches.id, matchId))
 
   const { predictions_updated } = await applyWO(matchId)
+
+  const cancelledMatch = await db.select().from(matches).where(eq(matches.id, matchId)).get()
+  if (cancelledMatch) {
+    notifyAfterLock(cancelledMatch).catch((err) =>
+      console.error(`[admin/cancel] notifyAfterLock error for match ${matchId}:`, err)
+    )
+  }
 
   await db.insert(pollingLogs).values({
     ran_at: new Date(),

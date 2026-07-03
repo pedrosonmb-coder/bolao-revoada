@@ -10,9 +10,8 @@ import type { MatchSnapshot } from './data-sources/types'
 import { isPlausibleSnapshot, selectConsensusSnapshots } from './data-sources/validate'
 import { recalculateMatchPredictions } from './scoring/recalculate-match-predictions'
 import { retryRecalculate } from './recalculate-retry'
-import { checkAndNotifyPhaseOpen } from './notifications/phase-open'
-import { checkAndNotifyPhaseChampion } from './notifications/phase-champion'
-import { alertAdminConflict, alertAdminPenaltyCheck } from './notifications/admin-alert'
+import { alertAdminConflict } from './notifications/admin-alert'
+import { notifyAfterLock } from './notifications/notify-after-lock'
 import { computeLockDecision, LOCK_THRESHOLD } from './reconciliation-lock'
 import { deriveQualifiedTeamCode } from './scoring/derive-qualified'
 export { computeLockDecision } from './reconciliation-lock'
@@ -257,21 +256,11 @@ export async function applyReconciliation(
     if (recalc !== null) {
       console.log(`[reconciliation] match ${matchId} LOCKED. Recalculated ${recalc.updated} predictions.`)
     }
-    // Verifica se a fase foi concluída e notifica abertura da próxima
     const [lockedMatch] = await db.select().from(matches).where(eq(matches.id, matchId)).limit(1)
     if (lockedMatch) {
-      checkAndNotifyPhaseOpen(lockedMatch).catch((err) =>
-        console.error(`[reconciliation] falha ao verificar phase-open para match ${matchId}:`, err)
+      notifyAfterLock(lockedMatch).catch((err) =>
+        console.error(`[reconciliation] notifyAfterLock error for match ${matchId}:`, err)
       )
-      // Best-effort: champion notification must never derrubar o lock
-      checkAndNotifyPhaseChampion(lockedMatch).catch((err) =>
-        console.error(`[reconciliation] falha ao verificar phase-champion para match ${matchId}:`, err)
-      )
-      if (lockedMatch.home_score_pen !== null) {
-        alertAdminPenaltyCheck(lockedMatch).catch((err) =>
-          console.error(`[reconciliation] falha ao alertar penalty-check para match ${matchId}:`, err)
-        )
-      }
     }
   }
 

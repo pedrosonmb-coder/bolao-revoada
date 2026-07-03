@@ -5,7 +5,7 @@ import { matches, pollingLogs } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { recalculateMatchPredictions } from '@/lib/scoring/recalculate-match-predictions'
-import { checkAndNotifyPhaseOpen } from '@/lib/notifications/phase-open'
+import { notifyAfterLock } from '@/lib/notifications/notify-after-lock'
 import { resolveOverrideQualifiedTeamCode } from '@/lib/scoring/resolve-override-qtc'
 
 const bodySchema = z.object({
@@ -102,8 +102,8 @@ export async function POST(
 
   const updatedMatch = await db.select().from(matches).where(eq(matches.id, matchId)).get()
   if (updatedMatch) {
-    checkAndNotifyPhaseOpen(updatedMatch).catch((err) =>
-      console.error('[admin/override] checkAndNotifyPhaseOpen erro:', err)
+    notifyAfterLock(updatedMatch).catch((err) =>
+      console.error('[admin/override] notifyAfterLock erro:', err)
     )
   }
 
