@@ -13,6 +13,7 @@ export type NotificationType =
   | 'stale_match_alert'
   | 'stale_unscored_alert'
   | 'phase_champion'
+  | 'penalty_check'
 
 export type SendOptions = {
   type: NotificationType

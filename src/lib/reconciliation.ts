@@ -12,7 +12,7 @@ import { recalculateMatchPredictions } from './scoring/recalculate-match-predict
 import { retryRecalculate } from './recalculate-retry'
 import { checkAndNotifyPhaseOpen } from './notifications/phase-open'
 import { checkAndNotifyPhaseChampion } from './notifications/phase-champion'
-import { alertAdminConflict } from './notifications/admin-alert'
+import { alertAdminConflict, alertAdminPenaltyCheck } from './notifications/admin-alert'
 import { computeLockDecision, LOCK_THRESHOLD } from './reconciliation-lock'
 import { deriveQualifiedTeamCode } from './scoring/derive-qualified'
 export { computeLockDecision } from './reconciliation-lock'
@@ -267,6 +267,11 @@ export async function applyReconciliation(
       checkAndNotifyPhaseChampion(lockedMatch).catch((err) =>
         console.error(`[reconciliation] falha ao verificar phase-champion para match ${matchId}:`, err)
       )
+      if (lockedMatch.home_score_pen !== null) {
+        alertAdminPenaltyCheck(lockedMatch).catch((err) =>
+          console.error(`[reconciliation] falha ao alertar penalty-check para match ${matchId}:`, err)
+        )
+      }
     }
   }
 

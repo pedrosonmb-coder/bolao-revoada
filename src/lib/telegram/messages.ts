@@ -383,6 +383,27 @@ export function unscoredMatchAlertMessage(match: {
   )
 }
 
+export function penaltyCheckAlertMessage(match: {
+  id: number
+  home_team_name: string
+  away_team_name: string
+  home_score: number | null
+  away_score: number | null
+  home_score_pen: number | null
+  away_score_pen: number | null
+  qualified_team_code: string | null
+}): string {
+  const placar = `${match.home_score ?? '?'}-${match.away_score ?? '?'}`
+  const pen = `${match.home_score_pen ?? '?'}-${match.away_score_pen ?? '?'}`
+  const qtc = match.qualified_team_code ?? 'null'
+  return (
+    `⚠️ ${match.home_team_name} x ${match.away_team_name} (match_id=${match.id}) foi decidido nos pênaltis.\n` +
+    `Placar gravado: ${placar} (pen ${pen}), classificado: ${qtc}.\n` +
+    `Confira se está correto — jogos de pênaltis às vezes têm captura parcial da fonte.\n` +
+    `Se precisar corrigir: POST /api/admin/matches/${match.id}/override`
+  )
+}
+
 export function staleMatchAlertMessage(match: {
   id: number
   home_team_name: string
