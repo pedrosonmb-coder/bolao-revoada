@@ -6,10 +6,13 @@ import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { recalculateMatchPredictions } from '@/lib/scoring/recalculate-match-predictions'
 import { checkAndNotifyPhaseOpen } from '@/lib/notifications/phase-open'
+import { resolveOverrideQualifiedTeamCode } from '@/lib/scoring/resolve-override-qtc'
 
 const bodySchema = z.object({
   home_score: z.number().int().min(0).max(30),
   away_score: z.number().int().min(0).max(30),
+  home_score_pen: z.number().int().min(0).max(30).optional(),
+  away_score_pen: z.number().int().min(0).max(30).optional(),
   qualified_team_code: z.enum(['home', 'away']).optional(),
   reason: z.string().min(1),
 })
@@ -43,18 +46,31 @@ export async function POST(
   const parsed = bodySchema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
 
-  const { home_score, away_score, qualified_team_code, reason } = parsed.data
+  const { home_score, away_score, home_score_pen, away_score_pen, qualified_team_code, reason } = parsed.data
 
   const match = await db.select().from(matches).where(eq(matches.id, matchId)).get()
   if (!match) return NextResponse.json({ error: 'Jogo não encontrado' }, { status: 404 })
 
   const isKnockout = match.stage !== 'group'
-  if (isKnockout && home_score === away_score && !qualified_team_code) {
-    return NextResponse.json(
-      { error: 'Jogo de mata-mata com empate requer qualified_team_code' },
-      { status: 400 }
-    )
+  const isDraw = home_score === away_score
+  if (isKnockout && isDraw && !qualified_team_code) {
+    const hasPens = home_score_pen !== undefined && away_score_pen !== undefined
+    if (!hasPens) {
+      return NextResponse.json(
+        { error: 'Empate em mata-mata requer qualified_team_code ou home_score_pen/away_score_pen' },
+        { status: 400 }
+      )
+    }
   }
+
+  const effectiveQTC = resolveOverrideQualifiedTeamCode(
+    match.stage,
+    home_score,
+    away_score,
+    home_score_pen ?? null,
+    away_score_pen ?? null,
+    qualified_team_code
+  )
 
   let winner_code: 'home' | 'away' | 'draw' | null = null
   if (home_score > away_score) winner_code = 'home'
@@ -64,7 +80,9 @@ export async function POST(
   await db.update(matches).set({
     home_score,
     away_score,
-    qualified_team_code: qualified_team_code ?? null,
+    home_score_pen: home_score_pen ?? null,
+    away_score_pen: away_score_pen ?? null,
+    qualified_team_code: effectiveQTC,
     winner_code,
     status: 'finished',
     result_locked_at: new Date(),
@@ -89,7 +107,7 @@ export async function POST(
     )
   }
 
-  console.log(`[admin/override] match=${matchId} ${home_score}x${away_score} reason="${reason}" predictions_updated=${updated} admin=${admin.telegram_id}`)
+  console.log(`[admin/override] match=${matchId} ${home_score}x${away_score} qtc=${effectiveQTC} reason="${reason}" predictions_updated=${updated} admin=${admin.telegram_id}`)
 
   return NextResponse.json({ success: true, match_id: matchId, predictions_updated: updated })
 }
