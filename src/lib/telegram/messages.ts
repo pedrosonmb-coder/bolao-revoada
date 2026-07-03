@@ -383,6 +383,21 @@ export function unscoredMatchAlertMessage(match: {
   )
 }
 
+export function missingQualifierAlertMessage(match: {
+  id: number
+  home_team_name: string
+  away_team_name: string
+  home_score: number | null
+  away_score: number | null
+}): string {
+  const placar = `${match.home_score ?? '?'}-${match.away_score ?? '?'}`
+  return (
+    `⚠️ ${match.home_team_name} x ${match.away_team_name} (match_id=${match.id}) travou EMPATADO no mata-mata sem classificado definido.\n` +
+    `Placar: ${placar}. Possível captura incompleta de penaltis ou prorrogacao.\n` +
+    `Verificar e corrigir: POST /api/admin/matches/${match.id}/override`
+  )
+}
+
 export function penaltyCheckAlertMessage(match: {
   id: number
   home_team_name: string

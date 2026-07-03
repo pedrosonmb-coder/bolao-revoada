@@ -1,7 +1,7 @@
 import type { Match } from '@/lib/db/schema'
 import { checkAndNotifyPhaseOpen } from './phase-open'
 import { checkAndNotifyPhaseChampion } from './phase-champion'
-import { alertAdminPenaltyCheck } from './admin-alert'
+import { alertAdminPenaltyCheck, alertAdminMissingQualifier } from './admin-alert'
 
 // Ponto único de notificações pós-lock. Todos os caminhos (reconciliação, override,
 // cancel) devem chamar esta função para garantir consistência.
@@ -18,6 +18,18 @@ export async function notifyAfterLock(match: Match): Promise<void> {
   if (match.home_score_pen !== null) {
     alertAdminPenaltyCheck(match).catch((err) =>
       console.error(`[notify-after-lock] penalty-check error for match ${match.id}:`, err)
+    )
+  }
+  if (
+    match.stage !== 'group' &&
+    match.home_score !== null &&
+    match.away_score !== null &&
+    match.home_score === match.away_score &&
+    match.qualified_team_code === null &&
+    match.status !== 'cancelled'
+  ) {
+    alertAdminMissingQualifier(match).catch((err) =>
+      console.error(`[notify-after-lock] missing-qualifier error for match ${match.id}:`, err)
     )
   }
 }

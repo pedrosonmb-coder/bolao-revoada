@@ -14,6 +14,7 @@ export type NotificationType =
   | 'stale_unscored_alert'
   | 'phase_champion'
   | 'penalty_check'
+  | 'missing_qualifier_alert'
 
 export type SendOptions = {
   type: NotificationType
