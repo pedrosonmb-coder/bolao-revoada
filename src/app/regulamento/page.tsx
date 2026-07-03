@@ -97,8 +97,16 @@ export default function RegulamentoPage() {
             </li>
             <li>
               <span className="font-medium text-(--color-text-primary)">Mata-mata:</span>{' '}
-              se você palpita empate, precisa escolher qual seleção se classifica (nos pênaltis).
-              O app pede essa escolha automaticamente.
+              aqui os jogos não podem terminar empatados — vão para prorrogação e, se necessário, pênaltis.
+              Por isso, ao palpitar um empate no mata-mata, você escolhe qual seleção se classifica.
+              O placar que vale para a pontuação é o do tempo normal + prorrogação (os 90 ou 120 minutos).
+              Os pênaltis não entram no placar — servem só para definir quem avança.
+            </li>
+            <li>
+              <span className="font-medium text-(--color-text-primary)">Exemplos:</span>{' '}
+              se você palpitou 1×1 e o jogo terminou 1×1 e foi para os pênaltis, você acertou o placar.
+              Mas se você palpitou 1×1 e o jogo virou 2×1 na prorrogação, o placar real é 2×1 (você
+              errou o placar) — mas se acertou quem se classificou, ainda ganha o bônus (veja seção 5).
             </li>
           </ul>
         </section>
@@ -152,11 +160,21 @@ export default function RegulamentoPage() {
               com o multiplicador da fase. Ele é somado depois.
             </li>
             <li>
-              Se você palpitou um vencedor (ex: 2×1), o app entende automaticamente que você
-              está indicando esse time como classificado — sem precisar escolher separado.
+              <span className="font-medium text-(--color-text-primary)">Como o app sabe quem você indicou:</span>{' '}
+              se você palpitou um vencedor (ex: 2×1), o app entende que você indica esse time como
+              classificado. Se você palpitou empate, o app pede que você escolha quem avança.
             </li>
             <li>
-              Se você palpitou empate, o app pede que você escolha quem avança nos pênaltis.
+              O bônus vale sempre que você indicou o time certo, não importa como. Se você palpitou
+              a vitória de Portugal e Portugal se classificou, ganha o +8. Se você palpitou empate
+              mas escolheu Portugal, e Portugal se classificou, também ganha o +8 — mesmo que o
+              placar tenha dado diferente. O que conta para o bônus é ter acertado quem passou de fase.
+            </li>
+            <li>
+              <span className="font-medium text-(--color-text-primary)">Prorrogação e pênaltis:</span>{' '}
+              em jogos decididos na prorrogação, o classificado é automaticamente o vencedor (não há
+              escolha a fazer). Em jogos decididos nos pênaltis, o classificado é quem venceu a
+              disputa de pênaltis.
             </li>
           </ul>
           <div className="text-sm text-(--color-text-secondary) border-l-2 border-(--color-border-base) pl-3 space-y-1">
