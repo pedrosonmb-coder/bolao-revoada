@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+
+export const maxDuration = 60
 import { matches, pollingLogs } from '@/lib/db/schema'
 import { and, isNull, inArray, lte } from 'drizzle-orm'
 import { reconcileMatch, applyReconciliation } from '@/lib/reconciliation'

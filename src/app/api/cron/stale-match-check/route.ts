@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+
+export const maxDuration = 60
 import { matches, matchSnapshots, predictions } from '@/lib/db/schema'
 import { and, isNull, isNotNull, lte, inArray, eq, desc } from 'drizzle-orm'
 import { verifyCronAuth } from '@/lib/cron-auth'

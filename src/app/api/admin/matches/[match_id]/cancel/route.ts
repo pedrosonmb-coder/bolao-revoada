@@ -57,7 +57,7 @@ export async function POST(
 
   const cancelledMatch = await db.select().from(matches).where(eq(matches.id, matchId)).get()
   if (cancelledMatch) {
-    notifyAfterLock(cancelledMatch).catch((err) =>
+    await notifyAfterLock(cancelledMatch).catch((err) =>
       console.error(`[admin/cancel] notifyAfterLock error for match ${matchId}:`, err)
     )
   }

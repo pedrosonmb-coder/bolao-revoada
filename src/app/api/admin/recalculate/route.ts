@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth/admin'
+
+export const maxDuration = 60
 import { recalculateAll } from '@/lib/scoring/recalculate-all'
 import { recalculateMatchPredictions } from '@/lib/scoring/recalculate-match-predictions'
 import { z } from 'zod'

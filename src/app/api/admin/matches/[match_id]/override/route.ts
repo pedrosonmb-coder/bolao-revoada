@@ -102,7 +102,7 @@ export async function POST(
 
   const updatedMatch = await db.select().from(matches).where(eq(matches.id, matchId)).get()
   if (updatedMatch) {
-    notifyAfterLock(updatedMatch).catch((err) =>
+    await notifyAfterLock(updatedMatch).catch((err) =>
       console.error('[admin/override] notifyAfterLock erro:', err)
     )
   }

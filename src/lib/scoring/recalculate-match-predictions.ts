@@ -26,32 +26,34 @@ export async function recalculateMatchPredictions(
     .from(predictions)
     .where(eq(predictions.match_id, matchId))
 
-  for (const prediction of allPredictions) {
-    const breakdown = calculateMatchPoints(
-      {
-        home_score: prediction.home_score,
-        away_score: prediction.away_score,
-        qualified_team_code: prediction.qualified_team_code as 'home' | 'away' | null,
-      },
-      {
-        stage: match.stage as Stage,
-        home_score: match.home_score,
-        away_score: match.away_score,
-        qualified_team_code: match.qualified_team_code as 'home' | 'away' | null,
-      }
-    )
+  await Promise.all(
+    allPredictions.map((prediction) => {
+      const breakdown = calculateMatchPoints(
+        {
+          home_score: prediction.home_score,
+          away_score: prediction.away_score,
+          qualified_team_code: prediction.qualified_team_code as 'home' | 'away' | null,
+        },
+        {
+          stage: match.stage as Stage,
+          home_score: match.home_score!,
+          away_score: match.away_score!,
+          qualified_team_code: match.qualified_team_code as 'home' | 'away' | null,
+        }
+      )
 
-    await db
-      .update(predictions)
-      .set({
-        base_points: breakdown.base_points,
-        classification_bonus: breakdown.classification_bonus,
-        multiplier: breakdown.multiplier,
-        points_awarded: breakdown.points_awarded,
-        computed_at: new Date(),
-      })
-      .where(eq(predictions.id, prediction.id))
-  }
+      return db
+        .update(predictions)
+        .set({
+          base_points: breakdown.base_points,
+          classification_bonus: breakdown.classification_bonus,
+          multiplier: breakdown.multiplier,
+          points_awarded: breakdown.points_awarded,
+          computed_at: new Date(),
+        })
+        .where(eq(predictions.id, prediction.id))
+    })
+  )
 
   return { updated: allPredictions.length }
 }
