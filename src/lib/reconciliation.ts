@@ -221,6 +221,27 @@ export async function applyReconciliation(
     .orderBy(desc(matchSnapshots.fetched_at))
     .limit(LOCK_THRESHOLD)
 
+  // Peak score across ALL non-null snapshots — used to detect source regressions.
+  // max() ignores NULLs, so the isNotNull filter here is just for consistency.
+  const [peakRow] = await db
+    .select({
+      peakHome: sql<number | null>`max(${matchSnapshots.home_score})`,
+      peakAway: sql<number | null>`max(${matchSnapshots.away_score})`,
+    })
+    .from(matchSnapshots)
+    .where(
+      and(
+        eq(matchSnapshots.match_id, matchId),
+        isNotNull(matchSnapshots.home_score),
+        isNotNull(matchSnapshots.away_score)
+      )
+    )
+
+  const peakScore =
+    typeof peakRow?.peakHome === 'number' && typeof peakRow?.peakAway === 'number'
+      ? { home: peakRow.peakHome, away: peakRow.peakAway }
+      : null
+
   const decision = computeLockDecision({
     snapshotStatus: snapshot.status,
     resultKind: result.kind,
@@ -229,7 +250,19 @@ export async function applyReconciliation(
       away_score: s.away_score!,
       status: s.status,
     })),
+    peakScore,
   })
+
+  if (!decision.shouldLock && decision.reason === 'regression_detected') {
+    console.log(
+      JSON.stringify({
+        event: 'lock_blocked_regression',
+        match_id: matchId,
+        snapshot_score: `${snapshot.home_score}-${snapshot.away_score}`,
+        peak_score: `${peakScore?.home}-${peakScore?.away}`,
+      })
+    )
+  }
 
   if (decision.shouldLock) {
     // FURO 1: deriva o classificado automaticamente ao travar o resultado
@@ -258,7 +291,7 @@ export async function applyReconciliation(
     }
     const [lockedMatch] = await db.select().from(matches).where(eq(matches.id, matchId)).limit(1)
     if (lockedMatch) {
-      notifyAfterLock(lockedMatch).catch((err) =>
+      await notifyAfterLock(lockedMatch).catch((err) =>
         console.error(`[reconciliation] notifyAfterLock error for match ${matchId}:`, err)
       )
     }

@@ -11,7 +11,7 @@ export const TIME_LOCK_STABILITY_MINUTES = 30
 
 export type LockDecision =
   | { shouldLock: true; lockScore: { home: number; away: number } }
-  | { shouldLock: false; lockScore: null }
+  | { shouldLock: false; lockScore: null; reason: string }
 
 export type TimeLockDecision =
   | { shouldLock: true; lockScore: { home: number; away: number; home_pen: number | null; away_pen: number | null } }
@@ -35,11 +35,12 @@ export function computeLockDecision(params: {
   snapshotStatus: string | null
   resultKind: 'agreed' | 'partial' | 'conflict' | 'all_failed'
   recentNonNullSnapshots: Array<{ home_score: number; away_score: number; status: string | null }>
+  peakScore?: { home: number; away: number } | null
 }): LockDecision {
-  const { snapshotStatus, resultKind, recentNonNullSnapshots } = params
+  const { snapshotStatus, resultKind, recentNonNullSnapshots, peakScore } = params
 
-  if (snapshotStatus !== 'finished') return { shouldLock: false, lockScore: null }
-  if (resultKind !== 'agreed' && resultKind !== 'partial') return { shouldLock: false, lockScore: null }
+  if (snapshotStatus !== 'finished') return { shouldLock: false, lockScore: null, reason: 'status_not_finished' }
+  if (resultKind !== 'agreed' && resultKind !== 'partial') return { shouldLock: false, lockScore: null, reason: 'invalid_result_kind' }
 
   // Prefer finished-only snapshots when available — ignore halftime/live scores
   // that precede the confirmed end of the match.
@@ -48,13 +49,23 @@ export function computeLockDecision(params: {
     ? recentNonNullSnapshots.filter((s) => s.status === 'finished')
     : recentNonNullSnapshots
 
-  if (candidates.length < LOCK_THRESHOLD_FLOOR) return { shouldLock: false, lockScore: null }
+  if (candidates.length < LOCK_THRESHOLD_FLOOR) return { shouldLock: false, lockScore: null, reason: 'insufficient_snapshots' }
 
   const N = Math.min(LOCK_THRESHOLD, candidates.length)
   const sample = candidates.slice(0, N)
   const { home_score, away_score } = sample[0]
   const allAgree = sample.every((s) => s.home_score === home_score && s.away_score === away_score)
-  if (!allAgree) return { shouldLock: false, lockScore: null }
+  if (!allAgree) return { shouldLock: false, lockScore: null, reason: 'scores_diverge' }
+
+  // Regression guard: if either team's score dropped below the historical peak seen
+  // across all snapshots, the source likely reverted a goal erroneously. Block the
+  // immediate lock — the time-lock (kickoff+3h, stable 30min) handles it later,
+  // which covers both data errors (source corrects itself) and VAR (score stays stable).
+  if (peakScore != null) {
+    if (home_score < peakScore.home || away_score < peakScore.away) {
+      return { shouldLock: false, lockScore: null, reason: 'regression_detected' }
+    }
+  }
 
   return { shouldLock: true, lockScore: { home: home_score, away: away_score } }
 }

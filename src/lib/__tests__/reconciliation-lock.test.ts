@@ -192,3 +192,113 @@ describe('computeLockDecision', () => {
     expect(result.lockScore).toEqual({ home: 4, away: 1 })
   })
 })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Regressão de placar — proteção contra fonte que reverte gol erroneamente
+// ─────────────────────────────────────────────────────────────────────────────
+describe('computeLockDecision — regression_detected', () => {
+  // Caso AUS×EGY: pico 1-1 durante live, fonte reverteu para 0-0 e reportou finished
+  it('AUS×EGY pattern: peak 1-1, lock candidates 0-0 → regression_detected', () => {
+    const result = computeLockDecision({
+      snapshotStatus: 'finished',
+      resultKind: 'partial',
+      recentNonNullSnapshots: snaps(3, 0, 0, 'finished'),
+      peakScore: { home: 1, away: 1 },
+    })
+    expect(result.shouldLock).toBe(false)
+    if (!result.shouldLock) expect(result.reason).toBe('regression_detected')
+  })
+
+  // Caso ARG×CPV: pico 3-2 por 1 poll, fonte caiu para 2-1 e estabilizou
+  it('ARG×CPV pattern: peak 3-2, lock candidates 2-1 → regression_detected', () => {
+    const result = computeLockDecision({
+      snapshotStatus: 'finished',
+      resultKind: 'partial',
+      recentNonNullSnapshots: snaps(3, 2, 1, 'finished'),
+      peakScore: { home: 3, away: 2 },
+    })
+    expect(result.shouldLock).toBe(false)
+    if (!result.shouldLock) expect(result.reason).toBe('regression_detected')
+  })
+
+  // Caso COL×GHA: gol fantasma (+1), placar SÓ SUBIU — NÃO é regressão, trava normal
+  it('COL×GHA pattern: peak 1-0, lock candidates 2-0 (aumento) → trava normalmente', () => {
+    const result = computeLockDecision({
+      snapshotStatus: 'finished',
+      resultKind: 'partial',
+      recentNonNullSnapshots: snaps(3, 2, 0, 'finished'),
+      peakScore: { home: 1, away: 0 },
+    })
+    expect(result.shouldLock).toBe(true)
+    expect(result.lockScore).toEqual({ home: 2, away: 0 })
+  })
+
+  it('regressão só no away: peak 1-2, lock 1-1 → regression_detected', () => {
+    const result = computeLockDecision({
+      snapshotStatus: 'finished',
+      resultKind: 'partial',
+      recentNonNullSnapshots: snaps(3, 1, 1, 'finished'),
+      peakScore: { home: 1, away: 2 },
+    })
+    expect(result.shouldLock).toBe(false)
+    if (!result.shouldLock) expect(result.reason).toBe('regression_detected')
+  })
+
+  it('regressão só no home: peak 2-0, lock 1-0 → regression_detected', () => {
+    const result = computeLockDecision({
+      snapshotStatus: 'finished',
+      resultKind: 'partial',
+      recentNonNullSnapshots: snaps(3, 1, 0, 'finished'),
+      peakScore: { home: 2, away: 0 },
+    })
+    expect(result.shouldLock).toBe(false)
+    if (!result.shouldLock) expect(result.reason).toBe('regression_detected')
+  })
+
+  // Peak igual ao lock → empate exato, sem regressão → trava normal
+  it('peak igual ao lock score (1-0 = 1-0) → trava normalmente', () => {
+    const result = computeLockDecision({
+      snapshotStatus: 'finished',
+      resultKind: 'partial',
+      recentNonNullSnapshots: snaps(3, 1, 0, 'finished'),
+      peakScore: { home: 1, away: 0 },
+    })
+    expect(result.shouldLock).toBe(true)
+    expect(result.lockScore).toEqual({ home: 1, away: 0 })
+  })
+
+  // Sem peakScore (null): jogo sem histórico ou primeira poll → sem proteção, trava normal
+  it('peakScore null → sem proteção de regressão, trava normalmente', () => {
+    const result = computeLockDecision({
+      snapshotStatus: 'finished',
+      resultKind: 'partial',
+      recentNonNullSnapshots: snaps(3, 0, 0, 'finished'),
+      peakScore: null,
+    })
+    expect(result.shouldLock).toBe(true)
+    expect(result.lockScore).toEqual({ home: 0, away: 0 })
+  })
+
+  // Sem peakScore (undefined = não passado): backward-compat — comportamento atual preservado
+  it('peakScore não passado (undefined) → trava normalmente (backward-compat)', () => {
+    const result = computeLockDecision({
+      snapshotStatus: 'finished',
+      resultKind: 'agreed',
+      recentNonNullSnapshots: snaps(3, 2, 1, 'finished'),
+    })
+    expect(result.shouldLock).toBe(true)
+    expect(result.lockScore).toEqual({ home: 2, away: 1 })
+  })
+
+  // Jogo normal (placar só sobe): 0-0 → 1-0 → 1-1 → trava 1-1
+  it('caminho feliz: peak 1-1, lock 1-1 → sem regressão → trava 1-1', () => {
+    const result = computeLockDecision({
+      snapshotStatus: 'finished',
+      resultKind: 'partial',
+      recentNonNullSnapshots: snaps(3, 1, 1, 'finished'),
+      peakScore: { home: 1, away: 1 },
+    })
+    expect(result.shouldLock).toBe(true)
+    expect(result.lockScore).toEqual({ home: 1, away: 1 })
+  })
+})
