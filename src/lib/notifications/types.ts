@@ -15,6 +15,7 @@ export type NotificationType =
   | 'phase_champion'
   | 'penalty_check'
   | 'missing_qualifier_alert'
+  | 'lock_review'
 
 export type SendOptions = {
   type: NotificationType

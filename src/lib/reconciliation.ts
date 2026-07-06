@@ -291,7 +291,7 @@ export async function applyReconciliation(
     }
     const [lockedMatch] = await db.select().from(matches).where(eq(matches.id, matchId)).limit(1)
     if (lockedMatch) {
-      await notifyAfterLock(lockedMatch).catch((err) =>
+      await notifyAfterLock(lockedMatch, { peakScore }).catch((err) =>
         console.error(`[reconciliation] notifyAfterLock error for match ${matchId}:`, err)
       )
     }

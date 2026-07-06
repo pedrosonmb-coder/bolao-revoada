@@ -419,6 +419,33 @@ export function penaltyCheckAlertMessage(match: {
   )
 }
 
+export function lockReviewAlertMessage(
+  match: {
+    id: number
+    home_team_name: string
+    away_team_name: string
+    stage: string
+    home_score: number | null
+    away_score: number | null
+  },
+  regressionSuspected: boolean,
+  peakScore?: { home: number; away: number } | null
+): string {
+  const placar = `${match.home_score ?? '?'}-${match.away_score ?? '?'}`
+  if (regressionSuspected && peakScore != null) {
+    return (
+      `⚠️ ${match.home_team_name} x ${match.away_team_name} (${match.stage}, match ${match.id}) travado — placar suspeito.\n` +
+      `Placar travado: ${placar}. Pico histórico: ${peakScore.home}-${peakScore.away}. Fonte pode ter revertido um gol.\n` +
+      `Confira com atenção: POST /api/admin/matches/${match.id}/override`
+    )
+  }
+  return (
+    `🔒 ${match.home_team_name} x ${match.away_team_name} (${match.stage}, match ${match.id}) travado — ${placar}.\n` +
+    `Confira se o placar está correto.\n` +
+    `Corrigir: POST /api/admin/matches/${match.id}/override`
+  )
+}
+
 export function staleMatchAlertMessage(match: {
   id: number
   home_team_name: string

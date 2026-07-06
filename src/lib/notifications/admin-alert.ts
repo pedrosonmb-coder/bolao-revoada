@@ -1,7 +1,7 @@
 import type { Match } from '@/lib/db/schema'
 import type { MatchSnapshot } from '@/lib/data-sources/types'
 import { sendNotification } from './send'
-import { reconciliationAlertMessage, penaltyCheckAlertMessage, missingQualifierAlertMessage } from '@/lib/telegram/messages'
+import { reconciliationAlertMessage, penaltyCheckAlertMessage, missingQualifierAlertMessage, lockReviewAlertMessage } from '@/lib/telegram/messages'
 import { env } from '@/lib/env'
 
 export async function alertAdminConflict(
@@ -38,6 +38,23 @@ export async function alertAdminMissingQualifier(match: Match): Promise<void> {
     await sendNotification({
       type: 'missing_qualifier_alert',
       key: `missing_qualifier_alert:match_${match.id}`,
+      chatId: Number(adminId),
+      text,
+      matchId: match.id,
+    })
+  }
+}
+
+export async function alertAdminLockReview(
+  match: Match,
+  opts: { regressionSuspected: boolean; peakScore?: { home: number; away: number } | null }
+): Promise<void> {
+  const adminIds = env.ADMIN_TELEGRAM_IDS.split(',').map((s) => s.trim())
+  const text = lockReviewAlertMessage(match, opts.regressionSuspected, opts.peakScore)
+  for (const adminId of adminIds) {
+    await sendNotification({
+      type: 'lock_review',
+      key: `lock_review:match_${match.id}:${adminId}`,
       chatId: Number(adminId),
       text,
       matchId: match.id,
