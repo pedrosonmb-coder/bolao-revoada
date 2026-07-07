@@ -419,6 +419,18 @@ export function penaltyCheckAlertMessage(match: {
   )
 }
 
+export function overallChampionMessage(names: string[], points: number): string {
+  const nameStr = names.join(' e ')
+  return `🏆 Bolão do Revoada encerrado! Campeão Geral: ${nameStr} com ${points} pts. Parabéns!`
+}
+
+export function tournamentRequiredAlertMessage(matchId: number): string {
+  return (
+    `⚠️ Final travada (match_id=${matchId}) mas torneio não computado.\n` +
+    `Preencha os resultados de torneio (aba Torneio no admin) e clique "Salvar e recalcular" para anunciar o Campeão Geral.`
+  )
+}
+
 export function lockReviewAlertMessage(
   match: {
     id: number

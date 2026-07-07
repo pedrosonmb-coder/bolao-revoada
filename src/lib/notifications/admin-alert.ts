@@ -1,7 +1,7 @@
 import type { Match } from '@/lib/db/schema'
 import type { MatchSnapshot } from '@/lib/data-sources/types'
 import { sendNotification } from './send'
-import { reconciliationAlertMessage, penaltyCheckAlertMessage, missingQualifierAlertMessage, lockReviewAlertMessage } from '@/lib/telegram/messages'
+import { reconciliationAlertMessage, penaltyCheckAlertMessage, missingQualifierAlertMessage, lockReviewAlertMessage, tournamentRequiredAlertMessage } from '@/lib/telegram/messages'
 import { env } from '@/lib/env'
 
 export async function alertAdminConflict(
@@ -38,6 +38,20 @@ export async function alertAdminMissingQualifier(match: Match): Promise<void> {
     await sendNotification({
       type: 'missing_qualifier_alert',
       key: `missing_qualifier_alert:match_${match.id}`,
+      chatId: Number(adminId),
+      text,
+      matchId: match.id,
+    })
+  }
+}
+
+export async function alertAdminTournamentRequired(match: Match): Promise<void> {
+  const adminIds = env.ADMIN_TELEGRAM_IDS.split(',').map((s) => s.trim())
+  const text = tournamentRequiredAlertMessage(match.id)
+  for (const adminId of adminIds) {
+    await sendNotification({
+      type: 'tournament_required_alert',
+      key: `tournament_required_alert:match_${match.id}`,
       chatId: Number(adminId),
       text,
       matchId: match.id,

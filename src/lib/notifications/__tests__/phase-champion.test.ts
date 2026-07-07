@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { resolveChampionBlock } from '../phase-champion-block'
-import { phaseChampionMessage } from '@/lib/telegram/messages'
+import { phaseChampionMessage, overallChampionMessage, tournamentRequiredAlertMessage } from '@/lib/telegram/messages'
 
 describe('resolveChampionBlock', () => {
   it('group → group', () => {
@@ -19,7 +19,6 @@ describe('resolveChampionBlock', () => {
   })
 
   it('só group e knockout disparam (não fases individuais sem stage)', () => {
-    // Garante que só os 7 stages válidos retornam não-null
     const validStages = ['group', 'r32', 'r16', 'qf', 'sf', '3rd', 'final']
     for (const s of validStages) {
       expect(resolveChampionBlock(s)).not.toBeNull()
@@ -27,20 +26,12 @@ describe('resolveChampionBlock', () => {
   })
 })
 
-describe('phaseChampionMessage', () => {
+describe('phaseChampionMessage (grupo)', () => {
   it('group — único campeão', () => {
     const msg = phaseChampionMessage('group', ['Alice'], 347)
     expect(msg).toContain('Fase de grupos encerrada')
     expect(msg).toContain('Alice')
     expect(msg).toContain('347')
-    expect(msg).toContain('🏆')
-  })
-
-  it('knockout — único campeão', () => {
-    const msg = phaseChampionMessage('knockout', ['Bob'], 234)
-    expect(msg).toContain('mata-mata')
-    expect(msg).toContain('Bob')
-    expect(msg).toContain('234')
     expect(msg).toContain('🏆')
   })
 
@@ -50,16 +41,40 @@ describe('phaseChampionMessage', () => {
     expect(msg).toContain('Bob')
     expect(msg).toContain('300')
   })
+})
 
-  it('knockout — empate: ambos os nomes na mensagem', () => {
-    const msg = phaseChampionMessage('knockout', ['Alice', 'Carol'], 180)
-    expect(msg).toContain('Alice')
-    expect(msg).toContain('Carol')
+describe('overallChampionMessage (Campeão Geral do Bolão)', () => {
+  it('único campeão: contém nome, pontos e 🏆', () => {
+    const msg = overallChampionMessage(['Bob'], 487)
+    expect(msg).toContain('Bob')
+    expect(msg).toContain('487')
+    expect(msg).toContain('🏆')
+    expect(msg).toContain('Campeão Geral')
   })
 
-  it('group e knockout têm textos diferentes', () => {
-    const group = phaseChampionMessage('group', ['X'], 100)
-    const knockout = phaseChampionMessage('knockout', ['X'], 100)
-    expect(group).not.toBe(knockout)
+  it('empate: ambos os nomes na mensagem', () => {
+    const msg = overallChampionMessage(['Alice', 'Carol'], 400)
+    expect(msg).toContain('Alice')
+    expect(msg).toContain('Carol')
+    expect(msg).toContain('400')
+  })
+
+  it('mensagem inclui "Bolão do Revoada"', () => {
+    const msg = overallChampionMessage(['X'], 100)
+    expect(msg).toContain('Bolão do Revoada')
+  })
+
+  it('mensagem NÃO menciona mata-mata (é o Campeão Geral)', () => {
+    const msg = overallChampionMessage(['X'], 100)
+    expect(msg).not.toContain('mata-mata')
+  })
+})
+
+describe('tournamentRequiredAlertMessage', () => {
+  it('contém match_id e instrução de ação', () => {
+    const msg = tournamentRequiredAlertMessage(84)
+    expect(msg).toContain('84')
+    expect(msg).toContain('Salvar e recalcular')
+    expect(msg).toContain('⚠️')
   })
 })

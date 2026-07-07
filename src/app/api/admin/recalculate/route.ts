@@ -4,6 +4,7 @@ import { requireAdmin } from '@/lib/auth/admin'
 export const maxDuration = 60
 import { recalculateAll } from '@/lib/scoring/recalculate-all'
 import { recalculateMatchPredictions } from '@/lib/scoring/recalculate-match-predictions'
+import { maybeAnnounceOverallChampion } from '@/lib/notifications/phase-champion'
 import { z } from 'zod'
 
 const bodySchema = z.object({
@@ -48,5 +49,15 @@ export async function POST(req: NextRequest) {
   }
 
   const result = await recalculateAll()
+
+  // After tournament recalculate, attempt deferred overall champion announcement.
+  // Fires only if: final locked, all knockout stages closed, tournament computed,
+  // and phase_champion:overall hasn't been sent yet (idempotent via bot_messages).
+  if (result.tournament_updated > 0) {
+    maybeAnnounceOverallChampion().catch((err) =>
+      console.error('[recalculate] maybeAnnounceOverallChampion error:', err)
+    )
+  }
+
   return NextResponse.json(result)
 }
