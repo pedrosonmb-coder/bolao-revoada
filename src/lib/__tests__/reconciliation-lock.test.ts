@@ -302,3 +302,73 @@ describe('computeLockDecision — regression_detected', () => {
     expect(result.lockScore).toEqual({ home: 1, away: 1 })
   })
 })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mata-mata empatado sem pênaltis — bug do match 96 (SUI x COL): a fonte marca
+// 'finished' aos 90min de um jogo de mata-mata empatado, antes da prorrogação/
+// pênaltis. NUNCA travar automaticamente nesse estado — falta o classificado real.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('computeLockDecision — mata-mata empatado sem pênaltis (knockout_draw_pending)', () => {
+  // Caso SUI x COL: r16, 0-0, finished, sem pen scores → NÃO trava
+  it('r16 0-0 sem pens → não trava (knockout_draw_pending) [caso SUI x COL]', () => {
+    const result = computeLockDecision({
+      snapshotStatus: 'finished',
+      resultKind: 'partial',
+      recentNonNullSnapshots: snaps(3, 0, 0, 'finished'),
+      stage: 'r16',
+      homeScorePen: null,
+      awayScorePen: null,
+    })
+    expect(result.shouldLock).toBe(false)
+    if (!result.shouldLock) expect(result.reason).toBe('knockout_draw_pending')
+  })
+
+  it('r16 1-1 COM pens (4-3) → trava normalmente (classificado é derivável)', () => {
+    const result = computeLockDecision({
+      snapshotStatus: 'finished',
+      resultKind: 'partial',
+      recentNonNullSnapshots: snaps(3, 1, 1, 'finished'),
+      stage: 'r16',
+      homeScorePen: 4,
+      awayScorePen: 3,
+    })
+    expect(result.shouldLock).toBe(true)
+    expect(result.lockScore).toEqual({ home: 1, away: 1 })
+  })
+
+  it('mata-mata com vencedor no tempo normal (2-1) → trava normalmente (não é empate)', () => {
+    const result = computeLockDecision({
+      snapshotStatus: 'finished',
+      resultKind: 'partial',
+      recentNonNullSnapshots: snaps(3, 2, 1, 'finished'),
+      stage: 'r16',
+      homeScorePen: null,
+      awayScorePen: null,
+    })
+    expect(result.shouldLock).toBe(true)
+    expect(result.lockScore).toEqual({ home: 2, away: 1 })
+  })
+
+  it('fase de grupos empatada (0-0) sem pens → trava normalmente (empate é resultado válido)', () => {
+    const result = computeLockDecision({
+      snapshotStatus: 'finished',
+      resultKind: 'partial',
+      recentNonNullSnapshots: snaps(3, 0, 0, 'finished'),
+      stage: 'group',
+      homeScorePen: null,
+      awayScorePen: null,
+    })
+    expect(result.shouldLock).toBe(true)
+    expect(result.lockScore).toEqual({ home: 0, away: 0 })
+  })
+
+  it('stage não informado (chamada legada) → guarda ignorada, trava normalmente', () => {
+    const result = computeLockDecision({
+      snapshotStatus: 'finished',
+      resultKind: 'partial',
+      recentNonNullSnapshots: snaps(3, 0, 0, 'finished'),
+    })
+    expect(result.shouldLock).toBe(true)
+    expect(result.lockScore).toEqual({ home: 0, away: 0 })
+  })
+})

@@ -10,7 +10,7 @@ import type { MatchSnapshot } from './data-sources/types'
 import { isPlausibleSnapshot, selectConsensusSnapshots } from './data-sources/validate'
 import { recalculateMatchPredictions } from './scoring/recalculate-match-predictions'
 import { retryRecalculate } from './recalculate-retry'
-import { alertAdminConflict } from './notifications/admin-alert'
+import { alertAdminConflict, alertAdminKnockoutDrawPending } from './notifications/admin-alert'
 import { notifyAfterLock } from './notifications/notify-after-lock'
 import { computeLockDecision, LOCK_THRESHOLD } from './reconciliation-lock'
 import { deriveQualifiedTeamCode } from './scoring/derive-qualified'
@@ -251,6 +251,9 @@ export async function applyReconciliation(
       status: s.status,
     })),
     peakScore,
+    stage: current.stage,
+    homeScorePen: snapshot.home_score_pen,
+    awayScorePen: snapshot.away_score_pen,
   })
 
   if (!decision.shouldLock && decision.reason === 'regression_detected') {
@@ -261,6 +264,19 @@ export async function applyReconciliation(
         snapshot_score: `${snapshot.home_score}-${snapshot.away_score}`,
         peak_score: `${peakScore?.home}-${peakScore?.away}`,
       })
+    )
+  }
+
+  if (!decision.shouldLock && decision.reason === 'knockout_draw_pending') {
+    console.log(
+      JSON.stringify({
+        event: 'lock_blocked_knockout_draw_pending',
+        match_id: matchId,
+        snapshot_score: `${snapshot.home_score}-${snapshot.away_score}`,
+      })
+    )
+    alertAdminKnockoutDrawPending(current).catch((err) =>
+      console.error(`[reconciliation] alertAdminKnockoutDrawPending error for match ${matchId}:`, err)
     )
   }
 

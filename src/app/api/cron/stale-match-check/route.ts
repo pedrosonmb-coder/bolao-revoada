@@ -11,6 +11,7 @@ import { env } from '@/lib/env'
 import { computeTimeLockDecision } from '@/lib/reconciliation-lock'
 import { applyReconciliation } from '@/lib/reconciliation'
 import type { ReconciliationResult } from '@/lib/reconciliation'
+import { alertAdminKnockoutDrawPending } from '@/lib/notifications/admin-alert'
 
 export async function GET(req: NextRequest) {
   const authError = verifyCronAuth(req)
@@ -68,7 +69,21 @@ export async function GET(req: NextRequest) {
         away_score_pen: s.away_score_pen,
         fetched_at: s.fetched_at instanceof Date ? s.fetched_at : new Date((s.fetched_at as number) * 1000),
       })),
+      stage: match.stage,
     })
+
+    if (!timeLock.shouldLock && timeLock.reason === 'knockout_draw_pending') {
+      console.log(
+        JSON.stringify({
+          event: 'time_lock_blocked_knockout_draw_pending',
+          match_id: match.id,
+        })
+      )
+      await alertAdminKnockoutDrawPending(match).catch((err) =>
+        console.error(`[stale-match-check] alertAdminKnockoutDrawPending error for match ${match.id}:`, err)
+      )
+      continue // não manda o alerta genérico de "stale" — já avisamos o motivo específico
+    }
 
     if (timeLock.shouldLock) {
       // Synthesise a 'finished' snapshot so applyReconciliation's existing lock path fires.

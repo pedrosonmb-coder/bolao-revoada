@@ -211,3 +211,63 @@ describe('computeTimeLockDecision — não interfere no caminho normal', () => {
     expect(normal.lockScore).toEqual({ home: 1, away: 0 })
   })
 })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 10. Mata-mata empatado sem pênaltis via time-lock — mesma guarda do lock imediato.
+//     Sem isso, um empate estável (30min+) com pen sempre null "concorda" (null===null)
+//     e reproduziria o bug do match 96 pela porta do fallback de 3h.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('computeTimeLockDecision — mata-mata empatado sem pênaltis (knockout_draw_pending)', () => {
+  it('r16 0-0 estável 35min, kickoff 4h atrás, sem pens → não trava (knockout_draw_pending)', () => {
+    const result = computeTimeLockDecision({
+      kickoffAt: KICKOFF_4H_AGO,
+      now: NOW,
+      recentNonNullSnapshots: stableSnaps(10, 0, 0, 35, NOW),
+      stage: 'r16',
+    })
+    expect(result.shouldLock).toBe(false)
+    if (!result.shouldLock) expect(result.reason).toBe('knockout_draw_pending')
+  })
+
+  it('r16 1-1 estável com pens 4-3 → trava normalmente (classificado derivável)', () => {
+    const result = computeTimeLockDecision({
+      kickoffAt: KICKOFF_4H_AGO,
+      now: NOW,
+      recentNonNullSnapshots: stableSnaps(10, 1, 1, 35, NOW, 4, 3),
+      stage: 'r16',
+    })
+    expect(result.shouldLock).toBe(true)
+    if (result.shouldLock) {
+      expect(result.lockScore).toEqual({ home: 1, away: 1, home_pen: 4, away_pen: 3 })
+    }
+  })
+
+  it('mata-mata com vencedor no tempo normal (2-1) estável → trava normalmente (não é empate)', () => {
+    const result = computeTimeLockDecision({
+      kickoffAt: KICKOFF_4H_AGO,
+      now: NOW,
+      recentNonNullSnapshots: stableSnaps(10, 2, 1, 35, NOW),
+      stage: 'r16',
+    })
+    expect(result.shouldLock).toBe(true)
+  })
+
+  it('fase de grupos empatada (0-0) estável sem pens → trava normalmente (empate é resultado válido)', () => {
+    const result = computeTimeLockDecision({
+      kickoffAt: KICKOFF_4H_AGO,
+      now: NOW,
+      recentNonNullSnapshots: stableSnaps(10, 0, 0, 35, NOW),
+      stage: 'group',
+    })
+    expect(result.shouldLock).toBe(true)
+  })
+
+  it('stage não informado (chamada legada) → guarda ignorada, trava normalmente', () => {
+    const result = computeTimeLockDecision({
+      kickoffAt: KICKOFF_4H_AGO,
+      now: NOW,
+      recentNonNullSnapshots: stableSnaps(10, 0, 0, 35, NOW),
+    })
+    expect(result.shouldLock).toBe(true)
+  })
+})

@@ -36,8 +36,12 @@ export function computeLockDecision(params: {
   resultKind: 'agreed' | 'partial' | 'conflict' | 'all_failed'
   recentNonNullSnapshots: Array<{ home_score: number; away_score: number; status: string | null }>
   peakScore?: { home: number; away: number } | null
+  // Quando ausente (testes legados), a guarda de mata-mata empatado é ignorada.
+  stage?: string
+  homeScorePen?: number | null
+  awayScorePen?: number | null
 }): LockDecision {
-  const { snapshotStatus, resultKind, recentNonNullSnapshots, peakScore } = params
+  const { snapshotStatus, resultKind, recentNonNullSnapshots, peakScore, stage, homeScorePen, awayScorePen } = params
 
   if (snapshotStatus !== 'finished') return { shouldLock: false, lockScore: null, reason: 'status_not_finished' }
   if (resultKind !== 'agreed' && resultKind !== 'partial') return { shouldLock: false, lockScore: null, reason: 'invalid_result_kind' }
@@ -67,6 +71,16 @@ export function computeLockDecision(params: {
     }
   }
 
+  // Mata-mata empatado sem pênaltis ainda não tem classificado — travar aqui
+  // pontuaria com um resultado que não é o fim real do jogo (falta prorrogação/pênaltis).
+  // Só resolve via pênaltis chegando de uma fonte ou override manual do admin.
+  if (stage !== undefined && stage !== 'group' && home_score === away_score) {
+    const hasPens = homeScorePen != null && awayScorePen != null
+    if (!hasPens) {
+      return { shouldLock: false, lockScore: null, reason: 'knockout_draw_pending' }
+    }
+  }
+
   return { shouldLock: true, lockScore: { home: home_score, away: away_score } }
 }
 
@@ -90,8 +104,10 @@ export function computeTimeLockDecision(params: {
     away_score_pen: number | null
     fetched_at: Date
   }>
+  // Quando ausente (testes legados), a guarda de mata-mata empatado é ignorada.
+  stage?: string
 }): TimeLockDecision {
-  const { kickoffAt, now, recentNonNullSnapshots } = params
+  const { kickoffAt, now, recentNonNullSnapshots, stage } = params
 
   const elapsedMs = now.getTime() - kickoffAt.getTime()
   if (elapsedMs < TIME_LOCK_KICKOFF_HOURS * 60 * 60 * 1000) {
@@ -119,6 +135,16 @@ export function computeTimeLockDecision(params: {
   const spanMs = newest - oldest
   if (spanMs < TIME_LOCK_STABILITY_MINUTES * 60 * 1000) {
     return { shouldLock: false, lockScore: null, reason: 'span_too_short' }
+  }
+
+  // Mesma guarda do lock imediato: mata-mata empatado sem pênaltis nunca é travado
+  // automaticamente, nem por tempo — senão null===null "concorda" e reproduz o bug
+  // por outra porta (fonte nunca reporta pênaltis, jogo fica travado errado após 3h).
+  if (stage !== undefined && stage !== 'group' && home_score === away_score) {
+    const hasPens = home_score_pen != null && away_score_pen != null
+    if (!hasPens) {
+      return { shouldLock: false, lockScore: null, reason: 'knockout_draw_pending' }
+    }
   }
 
   return {

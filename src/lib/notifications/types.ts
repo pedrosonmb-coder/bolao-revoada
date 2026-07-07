@@ -17,6 +17,7 @@ export type NotificationType =
   | 'missing_qualifier_alert'
   | 'lock_review'
   | 'tournament_required_alert'
+  | 'knockout_draw_pending_alert'
 
 export type SendOptions = {
   type: NotificationType

@@ -398,6 +398,20 @@ export function missingQualifierAlertMessage(match: {
   )
 }
 
+export function knockoutDrawPendingAlertMessage(match: {
+  id: number
+  home_team_name: string
+  away_team_name: string
+  home_score: number | null
+  away_score: number | null
+}): string {
+  const placar = `${match.home_score ?? '?'}-${match.away_score ?? '?'}`
+  return (
+    `⏸️ ${match.home_team_name} x ${match.away_team_name} (match_id=${match.id}) empatou no mata-mata (${placar}) e a fonte já marcou como encerrado, mas os pênaltis ainda não chegaram.\n` +
+    `O sistema NÃO travou o resultado — está aguardando. Assim que os pênaltis saírem, resolva via override: POST /api/admin/matches/${match.id}/override`
+  )
+}
+
 export function penaltyCheckAlertMessage(match: {
   id: number
   home_team_name: string
