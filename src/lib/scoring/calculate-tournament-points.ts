@@ -27,29 +27,32 @@ function matchesAnyAlias(predicted: string | null, officialWithAliases: string):
   return valid.includes(normalizeName(predicted))
 }
 
+// Top-4 com consolação: cada um dos 4 times do palpite pontua pelo MELHOR papel que
+// acertou, não pela soma. Acertar o papel exato (campeão/vice) SUBSTITUI a consolação de
+// 25 por ter chegado ao top-4 — não soma com ela. Times fora do top-4 real valem 0.
 export function calculateTournamentPoints(
   prediction: TournamentPrediction,
   result: TournamentResult
 ): number {
   let pts = 0
 
-  if (prediction.champion_code === result.champion_code) pts += 100
-  if (prediction.runner_up_code === result.runner_up_code) pts += 50
+  const realTop4 = new Set([result.champion_code, result.runner_up_code, ...result.semifinalists])
 
-  const realOtherSemis = result.semifinalists.filter(
-    (c) => c !== result.champion_code && c !== result.runner_up_code
-  )
+  const predictedSlots: Array<{ team: string | null; role: 'champion' | 'runner_up' | 'other' }> = [
+    { team: prediction.champion_code, role: 'champion' },
+    { team: prediction.runner_up_code, role: 'runner_up' },
+    { team: prediction.semifinalist_1_code, role: 'other' },
+    { team: prediction.semifinalist_2_code, role: 'other' },
+  ]
 
-  const predictedOtherSemis = [
-    prediction.semifinalist_1_code,
-    prediction.semifinalist_2_code,
-  ].filter((c): c is string => c !== null)
-
-  const counted = new Set<string>()
-  for (const code of predictedOtherSemis) {
-    if (realOtherSemis.includes(code) && !counted.has(code)) {
+  for (const { team, role } of predictedSlots) {
+    if (team === null) continue
+    if (role === 'champion' && team === result.champion_code) {
+      pts += 100
+    } else if (role === 'runner_up' && team === result.runner_up_code) {
+      pts += 50
+    } else if (realTop4.has(team)) {
       pts += 25
-      counted.add(code)
     }
   }
 

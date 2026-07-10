@@ -10,8 +10,112 @@ const result = {
   best_young_player_name: 'Endrick',
 }
 
-describe('calculateTournamentPoints', () => {
-  it('tudo errado → 0 pts', () => {
+describe('calculateTournamentPoints — top-4 com consolação (times)', () => {
+  // result: campeão BRA, vice ARG, top-4 = {BRA, ARG, FRA, ESP}
+
+  it('todos os 4 papéis exatos → 200 (100+50+25+25)', () => {
+    expect(
+      calculateTournamentPoints(
+        {
+          champion_code: 'BRA',
+          runner_up_code: 'ARG',
+          semifinalist_1_code: 'FRA',
+          semifinalist_2_code: 'ESP',
+          top_scorer_name: null,
+          best_player_name: null,
+          best_young_player_name: null,
+        },
+        result
+      )
+    ).toBe(200)
+  })
+
+  it('acertou os 4 times do top-4 mas TODOS os papéis errados → 100 (25×4)', () => {
+    expect(
+      calculateTournamentPoints(
+        {
+          champion_code: 'ARG', // real vice, não campeão
+          runner_up_code: 'BRA', // real campeão, não vice
+          semifinalist_1_code: 'FRA',
+          semifinalist_2_code: 'ESP',
+          top_scorer_name: null,
+          best_player_name: null,
+          best_young_player_name: null,
+        },
+        result
+      )
+    ).toBe(100)
+  })
+
+  it('marcou como campeão um time que foi vice → 25 (não 50, não 100)', () => {
+    expect(
+      calculateTournamentPoints(
+        {
+          champion_code: 'ARG', // real vice
+          runner_up_code: null,
+          semifinalist_1_code: null,
+          semifinalist_2_code: null,
+          top_scorer_name: null,
+          best_player_name: null,
+          best_young_player_name: null,
+        },
+        result
+      )
+    ).toBe(25)
+  })
+
+  it('marcou como vice um time que foi campeão → 25', () => {
+    expect(
+      calculateTournamentPoints(
+        {
+          champion_code: null,
+          runner_up_code: 'BRA', // real campeão
+          semifinalist_1_code: null,
+          semifinalist_2_code: null,
+          top_scorer_name: null,
+          best_player_name: null,
+          best_young_player_name: null,
+        },
+        result
+      )
+    ).toBe(25)
+  })
+
+  it('marcou como semifinalista um time que foi campeão → 25', () => {
+    expect(
+      calculateTournamentPoints(
+        {
+          champion_code: null,
+          runner_up_code: null,
+          semifinalist_1_code: 'BRA', // real campeão
+          semifinalist_2_code: null,
+          top_scorer_name: null,
+          best_player_name: null,
+          best_young_player_name: null,
+        },
+        result
+      )
+    ).toBe(25)
+  })
+
+  it('acertou campeão exato + 3 times fora do top-4 → 100', () => {
+    expect(
+      calculateTournamentPoints(
+        {
+          champion_code: 'BRA',
+          runner_up_code: 'GER',
+          semifinalist_1_code: 'ENG',
+          semifinalist_2_code: 'ITA',
+          top_scorer_name: null,
+          best_player_name: null,
+          best_young_player_name: null,
+        },
+        result
+      )
+    ).toBe(100)
+  })
+
+  it('nenhum time no top-4 → 0', () => {
     expect(
       calculateTournamentPoints(
         {
@@ -28,7 +132,24 @@ describe('calculateTournamentPoints', () => {
     ).toBe(0)
   })
 
-  it('só campeão correto → 100', () => {
+  it('combinação parcial: 1 papel certo (vice) + 1 top-4 em papel errado + 2 fora → 75', () => {
+    expect(
+      calculateTournamentPoints(
+        {
+          champion_code: 'GER', // fora do top-4 → 0
+          runner_up_code: 'ARG', // real vice, papel certo → 50
+          semifinalist_1_code: 'FRA', // real semi, top-4 → 25
+          semifinalist_2_code: 'ITA', // fora do top-4 → 0
+          top_scorer_name: null,
+          best_player_name: null,
+          best_young_player_name: null,
+        },
+        result
+      )
+    ).toBe(75)
+  })
+
+  it('só campeão correto (demais fora do top-4) → 100', () => {
     expect(
       calculateTournamentPoints(
         {
@@ -45,7 +166,7 @@ describe('calculateTournamentPoints', () => {
     ).toBe(100)
   })
 
-  it('campeão + vice corretos → 150', () => {
+  it('campeão + vice corretos (demais fora do top-4) → 150', () => {
     expect(
       calculateTournamentPoints(
         {
@@ -62,7 +183,7 @@ describe('calculateTournamentPoints', () => {
     ).toBe(150)
   })
 
-  it('campeão + vice + 1 semifinalista → 175', () => {
+  it('campeão + vice + 1 semifinalista no top-4 → 175', () => {
     expect(
       calculateTournamentPoints(
         {
@@ -79,7 +200,7 @@ describe('calculateTournamentPoints', () => {
     ).toBe(175)
   })
 
-  it('campeão + vice + 2 semifinalistas (ordem invertida no palpite) → 200', () => {
+  it('campeão + vice + 2 outros semifinalistas (ordem invertida no palpite) → 200 (teto do bloco de times)', () => {
     expect(
       calculateTournamentPoints(
         {
@@ -94,6 +215,25 @@ describe('calculateTournamentPoints', () => {
         result
       )
     ).toBe(200)
+  })
+
+  it('semifinalista_1 marcado é o campeão real → conta 25 de consolação (regra nova: papel errado ainda pontua por estar no top-4)', () => {
+    // BRA é campeão real; palpitar BRA como semi_1 agora ganha 25 (consolação),
+    // diferente da regra antiga (posicional), que dava 0 pro BRA nesse slot.
+    expect(
+      calculateTournamentPoints(
+        {
+          champion_code: null,
+          runner_up_code: null,
+          semifinalist_1_code: 'BRA',
+          semifinalist_2_code: 'FRA',
+          top_scorer_name: null,
+          best_player_name: null,
+          best_young_player_name: null,
+        },
+        result
+      )
+    ).toBe(50) // 25 (BRA consolação) + 25 (FRA consolação)
   })
 
   it('tudo correto → 325 (máximo)', () => {
@@ -234,23 +374,5 @@ describe('calculateTournamentPoints', () => {
         }
       )
     ).toBe(75) // 50 best_player + 25 best_young
-  })
-
-  it('semifinalista_1 é o mesmo que campeão real → não conta como "outro semi"', () => {
-    // BRA é campeão; palpitar BRA como semi_1 não deve ganhar 25 pts
-    expect(
-      calculateTournamentPoints(
-        {
-          champion_code: null,
-          runner_up_code: null,
-          semifinalist_1_code: 'BRA',
-          semifinalist_2_code: 'FRA',
-          top_scorer_name: null,
-          best_player_name: null,
-          best_young_player_name: null,
-        },
-        result
-      )
-    ).toBe(25) // só FRA conta
   })
 })
