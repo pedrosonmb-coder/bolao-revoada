@@ -433,9 +433,20 @@ export function penaltyCheckAlertMessage(match: {
   )
 }
 
-export function overallChampionMessage(names: string[], points: number): string {
-  const nameStr = names.join(' e ')
-  return `🏆 Bolão do Revoada encerrado! Campeão Geral: ${nameStr} com ${points} pts. Parabéns!`
+export function overallChampionMessage(
+  podium: Array<{ names: string[]; points: number }>,
+  participantCount: number
+): string {
+  const medals = ['🥇', '🥈', '🥉']
+  const lines = podium.map((entry, i) => `${medals[i]} ${entry.names.join(' e ')} — ${entry.points} pts`)
+
+  return (
+    `🏆 Bolão do Revoada — resultado final\n\n` +
+    `A Copa acabou! Classificação final:\n\n` +
+    `${lines.join('\n')}\n\n` +
+    `Toda a pontuação está aberta no app: dá pra conferir a conta de cada ponto, jogo por jogo — o placar, o palpite de cada um, o cálculo (base × multiplicador + bônus) e os pontos de torneio. É só abrir a ficha de qualquer participante no ranking.\n\n` +
+    `Obrigado a todos os ${participantCount} pela Copa. Foi um baita campeonato! ⚽`
+  )
 }
 
 export function tournamentRequiredAlertMessage(matchId: number): string {

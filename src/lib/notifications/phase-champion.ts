@@ -104,14 +104,19 @@ async function sendOverallChampionAnnouncement(): Promise<void> {
   const champions = ranking.filter((e) => e.position === 1)
   if (champions.length === 0) return
 
-  const names = champions.map((c) => c.name)
-  const points = champions[0].total_points
+  // Posições de pódio (1º, 2º, 3º) — agrupa nomes empatados na mesma posição.
+  // Se houver empate no 1º lugar, o próximo lugar real é o 3º (getRanking pula a
+  // posição 2), então o pódio pode sair com só 2 linhas — comportamento esperado.
+  const podium = [1, 2, 3]
+    .map((pos) => ranking.filter((e) => e.position === pos))
+    .filter((entries) => entries.length > 0)
+    .map((entries) => ({ names: entries.map((e) => e.name), points: entries[0].total_points }))
 
   await sendNotification({
     type: 'phase_champion',
     key: 'phase_champion:overall',
     chatId: Number(env.TELEGRAM_GROUP_CHAT_ID),
-    text: overallChampionMessage(names, points),
+    text: overallChampionMessage(podium, ranking.length),
   })
-  console.log(`[phase-champion] Campeão Geral: ${names.join(' e ')} (${points} pts)`)
+  console.log(`[phase-champion] Campeão Geral: ${champions.map((c) => c.name).join(' e ')} (${champions[0].total_points} pts)`)
 }
